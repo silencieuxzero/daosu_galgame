@@ -1,10 +1,10 @@
 {
   "manifest_version": 2,
-  "version": "1.0.0",
-  "name": "视觉小说插件",
-  "description": "模块化的文字类视觉小说插件，支持角色互动、好感度系统、存档管理、线索收集与记事本等功能",
+  "version": "1.0.1",
+  "name": "悼溯茶馆",
+  "description": "基于 MaiBot 的文字类视觉小说插件，背景设定于悼溯茶馆。支持角色互动、好感度系统、存档管理、线索收集与记事本等功能。可攻略角色：洛疏律、查维尔。",
   "author": {
-    "name": "DaoSu VisualNovel Team",
+    "name": "apt_install",
     "url": "https://github.com/daosu/visual-novel"
   },
   "license": "GPL-v3.0-or-later",
@@ -30,7 +30,6 @@
   ],
   "i18n": {
     "default_locale": "zh-CN",
-    "locales_path": "_locales",
     "supported_locales": [
       "zh-CN"
     ]

@@ -1,6 +1,6 @@
 [plugin]
 enabled = true
-config_version = "1.0.0"
+config_version = "1.0.1"
 
 [game]
 default_gifts = ["花束", "手工饼干", "音乐盒", "巧克力"]
@@ -8,3 +8,23 @@ default_gifts = ["花束", "手工饼干", "音乐盒", "巧克力"]
 [data]
 data_dir = "plugins/visual_novel/data"
 save_dir = "plugins/visual_novel/data/saves"
+
+[tutorial]
+enabled = true
+script_id = "tutorial_intro"
+
+[affection]
+initial_value = 0
+max_value = 100
+min_value = -100
+
+[save]
+max_slots = 20
+
+[forward]
+enabled = true
+auto_flush = true
+display_title = "悼溯茶馆 · 消息记录"
+bot_name = "悼溯茶馆"
+napcat_url = "http://127.0.0.1:3000"
+request_timeout = 10

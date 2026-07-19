@@ -1,106 +1,107 @@
 {
-  "script_id": "flower_shop_encounter",
-  "title": "花店相遇",
-  "start_node": "start",
-  "characters": ["玲"],
+  /* 对话脚本：茶馆雨遇 — 与洛疏律在雨天的初次邂逅 */
+  "script_id": "teahouse_encounter",        // 脚本唯一标识
+  "title": "茶馆雨遇",                      // 脚本标题
+  "start_node": "start",                     // 脚本起始节点 ID
+  "characters": ["洛疏律"],                  // 登场角色列表
   "nodes": {
     "start": {
       "speaker": "narrator",
-      "text": "你走进了一家街角的花店，店内弥漫着淡淡的花香。",
+      "text": "窗外下起了绵绵细雨，你推开一家老茶馆的木门，暖黄的灯光和淡淡的茶香扑面而来。",
       "emotion": "neutral",
       "next_node": "greeting"
     },
     "greeting": {
-      "speaker": "玲",
-      "text": "欢迎光临……请问需要些什么？",
+      "speaker": "洛疏律",
+      "text": "（抬头看了你一眼，又低头继续写着什么）啊……欢迎。茶单在桌上，自己看就好。",
       "emotion": "neutral",
       "choices": [
         {
-          "text": "随便看看。",
-          "next_node": "look_around",
-          "option_id": "casual_look",
-          "affection_change": 0
+          "text": "你在写什么？",
+          "next_node": "ask_notebook",
+          "option_id": "curious",           // 关联好感度规则选项 ID
+          "affection_change": 2             // 直接好感度变动量
         },
         {
-          "text": "我想买一束花送人。",
-          "next_node": "buy_flower",
-          "option_id": "buy_gift",
-          "affection_change": 2
+          "text": "来一壶蜂蜜柚子茶。",
+          "next_node": "order_tea",
+          "option_id": "same_taste",
+          "affection_change": 3             // 点相同的茶增加好感
         },
         {
-          "text": "哇，这些花好漂亮！",
-          "next_node": "compliment",
-          "option_id": "praise",
-          "affection_change": 3
+          "text": "一个人坐角落。",
+          "next_node": "sit_alone",
+          "option_id": "keep_distance",
+          "affection_change": 0             // 保持距离，好感不变
         }
       ]
     },
-    "look_around": {
-      "speaker": "玲",
-      "text": "请随意看看……如果有需要的话，可以随时叫我。",
+    "ask_notebook": {
+      "speaker": "洛疏律",
+      "text": "（合上笔记本，露出有些不好意思的表情）只是随便记一些想法……没什么特别的。",
       "emotion": "neutral",
       "next_node": "small_talk"
     },
-    "buy_flower": {
-      "speaker": "玲",
-      "text": "送人的话……这束雏菊怎么样？它代表着「希望」和「快乐」，是很受欢迎的礼物呢。",
-      "emotion": "happy",
+    "order_tea": {
+      "speaker": "洛疏律",
+      "text": "（终于放下笔，微微抬眼）蜂蜜柚子茶？好品味……这也是我最喜欢的。",
+      "emotion": "happy",                    // 情绪：高兴
       "next_node": "small_talk"
     },
-    "compliment": {
-      "speaker": "玲",
-      "text": "谢、谢谢你……这些是我早上刚从温室采回来的。",
-      "emotion": "happy",
+    "sit_alone": {
+      "speaker": "narrator",
+      "text": "你在靠窗的位置坐下，雨滴顺着玻璃滑落。不远处，那个穿黑色冲锋衣的人又低头继续写着什么。",
+      "emotion": "neutral",
       "next_node": "small_talk"
     },
     "small_talk": {
-      "speaker": "玲",
-      "text": "其实我一直觉得，花是有感情的。你对它们好，它们就会开得更美。",
-      "emotion": "warm",
+      "speaker": "洛疏律",
+      "text": "（不知何时走到你桌旁，端着一杯冒着热气的茶）下雨天的茶馆总是特别安静……我很喜欢这样的氛围。你不觉得吗？",
+      "emotion": "warm",                     // 情绪：温和/温暖的对话氛围
       "choices": [
         {
-          "text": "你真的很热爱这份工作呢。",
-          "next_node": "passion",
+          "text": "是啊，雨天和热茶很配。",
+          "next_node": "agree",
           "option_id": "understand",
           "affection_change": 3
         },
         {
-          "text": "花哪有什么感情，你想多了吧。",
-          "next_node": "disagree",
-          "option_id": "dismissive",
-          "affection_change": -3
+          "text": "你天天待在这儿不无聊吗？",
+          "next_node": "tease",
+          "option_id": "joking",
+          "affection_change": -2            // 调侃会略微降低好感
         },
         {
           "text": "静静听着",
           "next_node": "listen_end",
           "option_id": "listen_quietly",
-          "affection_change": 5
+          "affection_change": 5             // 倾听获得较高好感
         }
       ]
     },
-    "passion": {
-      "speaker": "玲",
-      "text": "（微微一笑）是啊……这家店是我的一切。虽然有时候会有点寂寞，但看到客人们开心的样子，我就觉得很值得。",
-      "emotion": "warm",
+    "agree": {
+      "speaker": "洛疏律",
+      "text": "（眼睛微微弯起，露出一个浅淡的笑容）嗯。雨天、热茶、安静的空间……对我来说就够了。（顿了顿）要不要试试这壶茉莉柚茶？我请客。",
+      "emotion": "happy",
       "next_node": "end"
     },
-    "disagree": {
-      "speaker": "玲",
-      "text": "（神色有些失落）也、也许你是对的吧……不过我还是愿意相信。",
-      "emotion": "sad",
+    "tease": {
+      "speaker": "洛疏律",
+      "text": "（愣了一下，似乎在认真思考这个问题）嗯……确实不会。这里就像是我的……（低头看了看钢笔）避风港吧。",
+      "emotion": "neutral",
       "next_node": "end"
     },
     "listen_end": {
-      "speaker": "玲",
-      "text": "……谢谢你愿意听我说这些。（低下头，声音轻柔）已经很久没有人这样静静地听我说话了。",
-      "emotion": "touched",
+      "speaker": "洛疏律",
+      "text": "（在旁边的椅子上坐下，目光看向窗外的雨）有时候觉得，雨声比任何音乐都让人安心……（声音渐轻）谢谢你没有嫌我闷。",
+      "emotion": "touched",                  // 情绪：被触动/感动
       "next_node": "end"
     },
     "end": {
       "speaker": "narrator",
-      "text": "你离开了花店，口袋里的零钱叮当作响，花香似乎还在鼻尖萦绕。",
+      "text": "雨渐渐停了，夕阳的余晖透过窗棂洒进来。你起身离开时，看见他又从口袋里掏出那本A5笔记本，低头写着什么。",
       "emotion": "neutral",
-      "next_node": null
+      "next_node": null                      // null 表示对话结束
     }
   },
   "metadata": {

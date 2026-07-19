@@ -4,7 +4,7 @@
 - 礼物赠送系统：选择物品赠送给角色
 - 邀约功能：邀请角色参与特定活动
 - 日常对话：自由对话交互界面
-所有互动行为均关联好感度系统。
+所有互动行为均关联好感度系统，并支持与记事本线索系统联动。
 """
 
 from __future__ import annotations
@@ -15,15 +15,25 @@ from typing import Any
 
 @dataclass
 class GiftItem:
-    """礼物物品定义。"""
+    """礼物物品定义。
 
-    name: str  # 礼物名称
-    description: str  # 礼物描述
-    category: str  # 礼物类别（food, book, accessory, decoration, etc.）
-    base_affection: int = 0  # 基础好感度加成
-    tags: list[str] = field(default_factory=list)  # 标签（用于匹配角色喜好）
+    Attributes:
+        name: 礼物名称。
+        description: 礼物描述文本。
+        category: 礼物类别（food, book, accessory, decoration, clothing, other）。
+        base_affection: 基础好感度加成值。
+            最终好感度变动还会受角色性格影响（通过 AffectionRule 计算）。
+        tags: 标签列表，用于匹配角色喜好。
+    """
+
+    name: str
+    description: str
+    category: str
+    base_affection: int = 0
+    tags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
+        """序列化为字典，用于状态持久化。"""
         return {
             "name": self.name,
             "description": self.description,
@@ -34,6 +44,14 @@ class GiftItem:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> GiftItem:
+        """从字典反序列化。
+
+        Args:
+            data: 礼物数据的字典表示。
+
+        Returns:
+            反序列化后的 GiftItem 实例。
+        """
         return cls(
             name=data.get("name", ""),
             description=data.get("description", ""),
@@ -45,16 +63,26 @@ class GiftItem:
 
 @dataclass
 class Activity:
-    """活动定义。"""
+    """活动定义。
 
-    name: str  # 活动名称
-    description: str  # 活动描述
-    category: str  # 活动类别（date, adventure, relax, study, etc.）
-    base_affection: int = 0  # 基础好感度加成
-    duration: str = "short"  # 持续时间（short, medium, long）
+    Attributes:
+        name: 活动名称。
+        description: 活动描述。
+        category: 活动类别（date, adventure, relax, study, etc.）。
+        base_affection: 基础好感度加成。
+        duration: 持续时间（short, medium, long）。
+        tags: 活动标签。
+    """
+
+    name: str
+    description: str
+    category: str
+    base_affection: int = 0
+    duration: str = "short"
     tags: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
+        """序列化为字典。"""
         return {
             "name": self.name,
             "description": self.description,
@@ -66,6 +94,7 @@ class Activity:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Activity:
+        """从字典反序列化。"""
         return cls(
             name=data.get("name", ""),
             description=data.get("description", ""),
@@ -76,6 +105,7 @@ class Activity:
         )
 
 
+# 默认礼物列表，在插件初始化时加载到管理器
 DEFAULT_GIFTS: list[GiftItem] = [
     GiftItem(name="花束", description="一束美丽的鲜花", category="decoration", base_affection=5, tags=["romantic", "beautiful"]),
     GiftItem(name="手工饼干", description="自制的香脆饼干", category="food", base_affection=8, tags=["homemade", "sweet"]),
@@ -87,6 +117,7 @@ DEFAULT_GIFTS: list[GiftItem] = [
     GiftItem(name="手写信", description="充满心意的手写信", category="other", base_affection=12, tags=["sincere", "personal"]),
 ]
 
+# 默认活动列表
 DEFAULT_ACTIVITIES: list[Activity] = [
     Activity(name="散步", description="一起去公园散步", category="relax", base_affection=3, duration="short", tags=["outdoor", "casual"]),
     Activity(name="看电影", description="一起看电影", category="date", base_affection=5, duration="medium", tags=["entertainment", "indoor"]),
@@ -100,29 +131,47 @@ DEFAULT_ACTIVITIES: list[Activity] = [
 class InteractionManager:
     """互动行为管理器。
 
-    管理礼物赠送、邀约活动和日常对话等玩家-角色互动。
+    管理礼物赠送、邀约活动和日常对话等玩家-角色互动功能。
+    与好感度管理器和记事本管理器联动，提供完整的互动闭环体验。
+
+    Usage:
+        mgr = InteractionManager(affection_mgr, notebook_mgr)
+        mgr.add_all_default_gifts()  # 初始化玩家背包
+        result = mgr.give_gift("洛疏律", "花束")
+        print(result["message"])
     """
 
     def __init__(self, affection_manager: Any, notebook_manager: Any | None = None) -> None:
-        """
+        """初始化互动管理器。
+
         Args:
-            affection_manager: 好感度管理器实例。
-            notebook_manager: 可选，记事本管理器实例（用于线索联动）。
+            affection_manager: 好感度管理器实例，用于互动后的好感度计算。
+            notebook_manager: 可选，记事本管理器实例，用于线索联动提示。
         """
         self._affection = affection_manager
         self._notebook = notebook_manager
         self._gifts: dict[str, GiftItem] = {g.name: g for g in DEFAULT_GIFTS}
         self._activities: dict[str, Activity] = {a.name: a for a in DEFAULT_ACTIVITIES}
-        self._player_inventory: list[str] = []  # 玩家拥有的礼物列表
+        self._player_inventory: list[str] = []  # 玩家拥有的礼物名称列表
 
     def set_notebook_manager(self, nb_mgr: Any) -> None:
-        """注入记事本管理器（联动）。"""
+        """注入记事本管理器引用。
+
+        用于初始化时 notebook_manager 尚未就绪的情况。
+
+        Args:
+            nb_mgr: NotebookManager 实例。
+        """
         self._notebook = nb_mgr
 
     # ==================== 礼物系统 ====================
 
     def list_available_gifts(self) -> list[GiftItem]:
-        """获取玩家可赠送的礼物列表。"""
+        """获取玩家背包中可赠送的礼物列表。
+
+        Returns:
+            背包中存在的 GiftItem 列表。
+        """
         return [self._gifts[name] for name in self._player_inventory if name in self._gifts]
 
     def add_gift_to_inventory(self, gift_name: str) -> bool:
@@ -132,7 +181,7 @@ class InteractionManager:
             gift_name: 礼物名称。
 
         Returns:
-            是否成功添加。
+            是否成功添加（礼物不存在时返回 False）。
         """
         if gift_name in self._gifts:
             self._player_inventory.append(gift_name)
@@ -140,7 +189,10 @@ class InteractionManager:
         return False
 
     def add_all_default_gifts(self) -> None:
-        """将所有默认礼物添加到玩家背包（测试/初始化用）。"""
+        """将所有默认礼物添加到玩家背包。
+
+        通常用于初始化或测试场景，使玩家立即拥有所有可选礼物。
+        """
         for name in self._gifts:
             if name not in self._player_inventory:
                 self._player_inventory.append(name)
@@ -148,22 +200,24 @@ class InteractionManager:
     def give_gift(self, character_name: str, gift_name: str) -> dict[str, Any]:
         """赠送礼物给指定角色。
 
-        根据礼物属性和角色偏好计算好感度变动。
-        如果有关联的记事本，会查询线索提示。
+        处理流程：
+        1. 验证礼物是否存在
+        2. 验证玩家背包中是否有该礼物
+        3. 从背包移除礼物
+        4. 计算并应用好感度变动
+        5. 查询记事本线索提示
 
         Args:
-            character_name: 目标角色。
+            character_name: 目标角色名称。
             gift_name: 礼物名称。
 
         Returns:
-            互动结果字典：
-            {
-                "success": bool,
-                "affection_change": int,
-                "total_affection": int,
-                "message": str,
-                "hint": str | None,
-            }
+            互动结果字典，包含：
+            - success: 是否成功
+            - affection_change: 好感度变动值
+            - total_affection: 更新后的好感度总值
+            - message: 操作结果文本
+            - hint: 记事本线索提示（如有）
         """
         gift = self._gifts.get(gift_name)
         if gift is None:
@@ -184,14 +238,14 @@ class InteractionManager:
                 "hint": None,
             }
 
-        # 从背包中移除礼物
+        # 从背包中移除礼物（已消耗）
         self._player_inventory.remove(gift_name)
 
-        # 计算好感度变动
+        # 计算好感度变动：直接使用基础值（如有 AffectionRule 需求可扩展）
         change = gift.base_affection
         total_affection = self._affection.modify(character_name, change)
 
-        # 查询线索提示
+        # 查询记事本中的礼物匹配线索
         hint = None
         if self._notebook:
             hint = self._notebook.check_gift_match(character_name, gift_name)
@@ -207,16 +261,20 @@ class InteractionManager:
     # ==================== 邀约系统 ====================
 
     def list_activities(self) -> list[Activity]:
-        """获取可邀约的活动列表。"""
+        """获取所有可邀约的活动列表。
+
+        Returns:
+            定义好的 Activity 列表。
+        """
         return list(self._activities.values())
 
     def invite(self, character_name: str, activity_name: str) -> dict[str, Any]:
         """邀请角色参加活动。
 
-        根据活动和角色关系计算好感度变动。
+        好感度变动直接使用活动的基础值，暂未引入性格倍率计算。
 
         Args:
-            character_name: 目标角色。
+            character_name: 目标角色名称。
             activity_name: 活动名称。
 
         Returns:
@@ -244,24 +302,24 @@ class InteractionManager:
     # ==================== 日常对话 ====================
 
     def process_daily_talk(self, character_name: str, message: str) -> dict[str, Any]:
-        """处理日常对话。
+        """处理日常对话交互。
 
-        分析消息内容，检测是否包含喜好线索并记录到记事本。
+        从玩家消息中检测关键词，同时扫描是否包含可记录为线索的信息。
 
         Args:
-            character_name: 目标角色。
+            character_name: 目标角色名称。
             message: 玩家发送的对话内容。
 
         Returns:
-            处理结果。
+            处理结果，包含检测到的关键词和发现的线索数量。
         """
-        # 简单的关键词反应
+        # 简单的关键词反应检测
         keywords_found: list[str] = []
         for keyword in ["你好", "早安", "晚安", "今天", "天气", "开心", "难过"]:
             if keyword in message:
                 keywords_found.append(keyword)
 
-        # 扫描线索
+        # 扫描文本中的角色喜好线索
         clues_found = 0
         if self._notebook:
             new_clues = self._notebook.scan_text_for_clues(message, character_name)
@@ -276,9 +334,17 @@ class InteractionManager:
     # ==================== 状态管理 ====================
 
     def load_state(self, data: dict[str, Any]) -> None:
-        """从存档数据加载互动状态。"""
+        """从存档数据加载互动状态。
+
+        Args:
+            data: 包含 inventory 键的字典。
+        """
         self._player_inventory = data.get("inventory", [])
 
     def dump_state(self) -> dict[str, Any]:
-        """导出互动状态用于存档。"""
+        """导出互动状态用于存档。
+
+        Returns:
+            包含玩家背包库存的可序列化字典。
+        """
         return {"inventory": list(self._player_inventory)}

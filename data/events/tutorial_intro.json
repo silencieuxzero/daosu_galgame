@@ -1,0 +1,64 @@
+{
+  /* 新手引导对话脚本 — 首次进入游戏时的交互式教程 */
+  "script_id": "tutorial_intro",
+  "title": "新手引导",
+  "start_node": "start",
+  "characters": [],
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "欢迎来到「悼溯茶馆」。\n\n这是一家藏在小巷深处的老茶馆，推开门的瞬间，暖黄的灯光和淡淡的茶香将你包围。你会在这里遇见两个特别的人——\n\n· 洛疏律，总在角落安静写字的青年\n· 查维尔，常守在鱼池边的神秘少年\n\n作为茶馆的新客人，让我带你熟悉一下这里。",
+      "emotion": "neutral",
+      "next_node": "step1"
+    },
+    "step1": {
+      "speaker": "narrator",
+      "text": "【角色介绍】\n\n· 洛疏律（小律）—— 25 岁男性，性格温和内向。总穿黑色冲锋衣，随身带一本 A5 笔记本。喜欢雨天和热茶，不爱被打扰也不擅长拒绝人。好感度达到一定程度后，他会向你敞开心扉。\n\n· 查维尔（病渔 / 卖渔翁）—— 外表 16 岁左右，性别不明。神秘内敛，话少但细腻温柔。总守在鱼池边看鱼，偶尔会自顾自地讲起很久以前的事。\n\n每位角色都有独立的对话、好感度和剧情线，你可以同时推进两人的故事。",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "我想了解更多玩法",
+          "next_node": "step2",
+          "option_id": "learn_more",
+          "affection_change": 0
+        },
+        {
+          "text": "明白了，开始游戏吧",
+          "next_node": "end",
+          "option_id": "start_game",
+          "affection_change": 0
+        }
+      ]
+    },
+    "step2": {
+      "speaker": "narrator",
+      "text": "【玩法指南】\n\n▸ 日常对话：输入 /dsv explore <角色名> 与角色开始聊天。你的每一句话都可能影响他们对你的好感度，注意观察他们的情绪变化。\n\n▸ 赠送礼物：输入 /dsv gift <角色名> <礼物名> 将礼物送给对方。投其所好会大幅提升好感，送错礼物可能适得其反。从对话中挖掘他们的喜好吧。\n\n▸ 邀请活动：输入 /dsv invite <角色名> <活动名> 邀请对方一起做某件事。关系越好，邀约越容易被接受。\n\n▸ 记事本：输入 /dsv notebook 查看你收集到的角色线索。线索越多，你越了解他们。友好度越高，他们会愿意分享更多。\n\n▸ 存档读档：输入 /dsv save <1-20> 保存进度，/dsv load <1-20> 读取之前的存档。随时可以 /dsv help 查看所有指令。",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "回到角色介绍",
+          "next_node": "step1",
+          "option_id": "back_to_char",
+          "affection_change": 0
+        },
+        {
+          "text": "开始游戏",
+          "next_node": "end",
+          "option_id": "start_game",
+          "affection_change": 0
+        }
+      ]
+    },
+    "end": {
+      "speaker": "narrator",
+      "text": "茶馆的门已经为你敞开。茶香氤氲，故事静候。\n\n输入 /dsv explore <角色名> 迈进这方小小的天地吧。祝你在这里找到属于你的温暖时光。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  },
+  "metadata": {
+    "author": "visual-novel",
+    "version": "1.0",
+    "type": "tutorial"
+  }
+}

@@ -2,38 +2,106 @@
 
 负责加载角色数据、管理角色 prompt、提供角色信息查询接口。
 所有角色数据以 JSON 格式存储于 data/characters/ 目录下。
+
+角色 JSON 支持两种注释格式：
+- 单行注释 //
+- 多行注释 /* ... */
 """
 
 from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
 from ..core.exceptions import CharacterNotFoundError
 
 
+def _strip_json_comments(json_str: str) -> str:
+    """移除 JSON 中的 // 和 /* */ 注释（仅在字符串外部）。
+
+    手动实现不依赖外部库的 JSON 注释过滤。
+    通过维护 in_string 状态避免误删字符串内部的 "//" 或 "/*"。
+
+    Args:
+        json_str: 可能包含注释的原始 JSON 字符串。
+
+    Returns:
+        移除注释后的纯净 JSON 字符串，可直接传给 json.loads()。
+    """
+    # 先移除 /* ... */ 块注释
+    no_block = re.sub(r'/\*[\s\S]*?\*/', '', json_str)
+    # 再移除 // 行注释（不在字符串内部）
+    result: list[str] = []
+    i = 0
+    in_string = False
+    while i < len(no_block):
+        c = no_block[i]
+        if c == '"' and (i == 0 or no_block[i - 1] != '\\'):
+            in_string = not in_string
+            result.append(c)
+            i += 1
+        elif not in_string and c == '/' and i + 1 < len(no_block) and no_block[i + 1] == '/':
+            # 跳过整行直到换行符
+            while i < len(no_block) and no_block[i] != '\n':
+                i += 1
+        else:
+            result.append(c)
+            i += 1
+    return ''.join(result)
+
+
 @dataclass
 class CharacterPrompt:
-    """角色 prompt 数据。"""
+    """角色 prompt 数据。
 
-    name: str  # 角色名称
-    nickname: str  # 角色昵称/称呼
-    gender: str  # 性别
-    age: int  # 年龄
-    personality: list[str]  # 性格特征列表
-    background: str  # 角色背景故事
-    dialogue_style: str  # 对话风格描述
-    likes: list[str]  # 喜欢的事物
-    dislikes: list[str]  # 厌恶的事物
-    hobbies: list[str]  # 兴趣爱好
-    affection_thresholds: dict[str, int]  # 好感度阈值区间
-    emotional_triggers: dict[str, Any] = field(default_factory=dict)  # 情绪触发规则
+    存储角色的完整设定信息，用于 LLM 角色扮演对话。
+    所有字段从角色 JSON 文件反序列化得到。
+
+    Attributes:
+        name: 角色全名。
+        nickname: 角色昵称或常用称呼。
+        gender: 性别。
+        age: 年龄。
+        personality: 性格特征标签列表，如 ["温和", "内向"]。
+        background: 角色背景故事文本。
+        dialogue_style: 对话风格描述，供 LLM 参考。
+        likes: 喜欢的事物列表。
+        dislikes: 厌恶的事物列表。
+        hobbies: 兴趣爱好列表。
+        affection_thresholds: 好感度阈值事件映射表。
+            key 为事件 ID，value 为触发该事件所需的最小好感度。
+        emotional_triggers: 情绪触发规则，定义特定条件触发的情绪状态。
+    """
+
+    name: str
+    nickname: str
+    gender: str
+    age: int
+    personality: list[str]
+    background: str
+    dialogue_style: str
+    likes: list[str]
+    dislikes: list[str]
+    hobbies: list[str]
+    affection_thresholds: dict[str, int]
+    emotional_triggers: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> CharacterPrompt:
-        """从字典创建角色数据。"""
+        """从字典创建角色数据。
+
+        使用 .get() 安全获取字段，缺失字段使用默认值，
+        避免因 JSON 字段缺失导致加载崩溃。
+
+        Args:
+            data: 角色数据的字典表示。
+
+        Returns:
+            创建好的 CharacterPrompt 实例。
+        """
         return cls(
             name=data.get("name", ""),
             nickname=data.get("nickname", ""),
@@ -50,7 +118,13 @@ class CharacterPrompt:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        """转为可序列化字典。"""
+        """转为可序列化字典。
+
+        用于存档或 API 传输。
+
+        Returns:
+            角色数据的字典表示。
+        """
         return {
             "name": self.name,
             "nickname": self.nickname,
@@ -67,7 +141,14 @@ class CharacterPrompt:
         }
 
     def get_full_prompt(self) -> str:
-        """生成完整的角色 prompt 文本，供 LLM 使用。"""
+        """生成完整的角色 prompt 文本，供 LLM 使用。
+
+        prompt 格式为结构化文本，包含角色名称、性格、背景、
+        对话风格、喜好厌恶等信息，指导 LLM 以角色身份进行对话。
+
+        Returns:
+            格式化的 prompt 文本字符串。
+        """
         lines = [
             f"你正在扮演 {self.name}（{self.nickname}）。",
             f"性格特征：{'、'.join(self.personality)}",
@@ -85,11 +166,19 @@ class CharacterPrompt:
 class CharacterManager:
     """角色管理器。
 
-    负责加载、缓存和查询角色数据。角色数据存储为独立 JSON 文件。
+    负责加载、缓存和查询角色数据。角色数据存储为独立的 JSON 文件，
+    每个文件对应一个角色。支持热重载。
+
+    Usage:
+        mgr = CharacterManager("data/characters")
+        mgr.load_all()
+        char = mgr.get_character("洛疏律")
+        print(char.get_full_prompt())
     """
 
     def __init__(self, data_dir: str) -> None:
-        """
+        """初始化角色管理器。
+
         Args:
             data_dir: 角色数据文件所在目录的绝对路径。
         """
@@ -103,7 +192,12 @@ class CharacterManager:
         return self._data_dir
 
     def load_all(self) -> None:
-        """从磁盘加载所有角色数据。"""
+        """从磁盘加载所有角色数据。
+
+        扫描 data_dir 下所有 .json 文件，逐一解析并缓存到 _characters 字典。
+        加载失败的文件会打印错误日志，不影响其他角色的加载。
+        支持带注释的 JSON（由 _strip_json_comments 处理）。
+        """
         self._characters.clear()
         if not os.path.isdir(self._data_dir):
             return
@@ -114,7 +208,9 @@ class CharacterManager:
             filepath = os.path.join(self._data_dir, filename)
             try:
                 with open(filepath, encoding="utf-8") as f:
-                    data = json.load(f)
+                    content = f.read()
+                # 先移除注释再解析 JSON
+                data = json.loads(_strip_json_comments(content))
                 character = CharacterPrompt.from_dict(data)
                 self._characters[character.name] = character
             except (json.JSONDecodeError, IOError) as e:
@@ -124,11 +220,16 @@ class CharacterManager:
         self._loaded = True
 
     def reload(self) -> None:
-        """重新加载所有角色数据（热重载）。"""
+        """重新加载所有角色数据（热重载）。
+
+        在插件运行时配置更新后调用。
+        """
         self.load_all()
 
     def get_character(self, name: str) -> CharacterPrompt:
         """获取指定角色的数据。
+
+        如果尚未加载，自动触发 load_all()。
 
         Args:
             name: 角色名称。
@@ -137,23 +238,33 @@ class CharacterManager:
             角色 prompt 数据。
 
         Raises:
-            CharacterNotFoundError: 角色不存在。
+            CharacterNotFoundError: 角色不存在时抛出，附带可用角色列表。
         """
         if not self._loaded:
             self.load_all()
         character = self._characters.get(name)
         if character is None:
-            raise CharacterNotFoundError(f"角色 '{name}' 不存在。可用角色: {', '.join(self.list_characters())}")
+            raise CharacterNotFoundError(
+                f"角色 '{name}' 不存在。可用角色: {', '.join(self.list_characters())}"
+            )
         return character
 
     def list_characters(self) -> list[str]:
-        """获取所有已加载的角色名称列表。"""
+        """获取所有已加载的角色名称列表。
+
+        Returns:
+            角色名列表，如 ["洛疏律", "查维尔"]。
+        """
         if not self._loaded:
             self.load_all()
         return list(self._characters.keys())
 
     def get_all_characters(self) -> dict[str, CharacterPrompt]:
-        """获取所有角色数据字典（名称 -> 数据）。"""
+        """获取所有角色数据字典。
+
+        Returns:
+            角色名称到 CharacterPrompt 的映射字典。
+        """
         if not self._loaded:
             self.load_all()
         return dict(self._characters)

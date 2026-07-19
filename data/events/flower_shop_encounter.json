@@ -1,0 +1,110 @@
+{
+  "script_id": "flower_shop_encounter",
+  "title": "花店相遇",
+  "start_node": "start",
+  "characters": ["玲"],
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "你走进了一家街角的花店，店内弥漫着淡淡的花香。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "玲",
+      "text": "欢迎光临……请问需要些什么？",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "随便看看。",
+          "next_node": "look_around",
+          "option_id": "casual_look",
+          "affection_change": 0
+        },
+        {
+          "text": "我想买一束花送人。",
+          "next_node": "buy_flower",
+          "option_id": "buy_gift",
+          "affection_change": 2
+        },
+        {
+          "text": "哇，这些花好漂亮！",
+          "next_node": "compliment",
+          "option_id": "praise",
+          "affection_change": 3
+        }
+      ]
+    },
+    "look_around": {
+      "speaker": "玲",
+      "text": "请随意看看……如果有需要的话，可以随时叫我。",
+      "emotion": "neutral",
+      "next_node": "small_talk"
+    },
+    "buy_flower": {
+      "speaker": "玲",
+      "text": "送人的话……这束雏菊怎么样？它代表着「希望」和「快乐」，是很受欢迎的礼物呢。",
+      "emotion": "happy",
+      "next_node": "small_talk"
+    },
+    "compliment": {
+      "speaker": "玲",
+      "text": "谢、谢谢你……这些是我早上刚从温室采回来的。",
+      "emotion": "happy",
+      "next_node": "small_talk"
+    },
+    "small_talk": {
+      "speaker": "玲",
+      "text": "其实我一直觉得，花是有感情的。你对它们好，它们就会开得更美。",
+      "emotion": "warm",
+      "choices": [
+        {
+          "text": "你真的很热爱这份工作呢。",
+          "next_node": "passion",
+          "option_id": "understand",
+          "affection_change": 3
+        },
+        {
+          "text": "花哪有什么感情，你想多了吧。",
+          "next_node": "disagree",
+          "option_id": "dismissive",
+          "affection_change": -3
+        },
+        {
+          "text": "静静听着",
+          "next_node": "listen_end",
+          "option_id": "listen_quietly",
+          "affection_change": 5
+        }
+      ]
+    },
+    "passion": {
+      "speaker": "玲",
+      "text": "（微微一笑）是啊……这家店是我的一切。虽然有时候会有点寂寞，但看到客人们开心的样子，我就觉得很值得。",
+      "emotion": "warm",
+      "next_node": "end"
+    },
+    "disagree": {
+      "speaker": "玲",
+      "text": "（神色有些失落）也、也许你是对的吧……不过我还是愿意相信。",
+      "emotion": "sad",
+      "next_node": "end"
+    },
+    "listen_end": {
+      "speaker": "玲",
+      "text": "……谢谢你愿意听我说这些。（低下头，声音轻柔）已经很久没有人这样静静地听我说话了。",
+      "emotion": "touched",
+      "next_node": "end"
+    },
+    "end": {
+      "speaker": "narrator",
+      "text": "你离开了花店，口袋里的零钱叮当作响，花香似乎还在鼻尖萦绕。",
+      "emotion": "neutral",
+      "next_node": null
+    }
+  },
+  "metadata": {
+    "author": "visual-novel",
+    "version": "1.0"
+  }
+}

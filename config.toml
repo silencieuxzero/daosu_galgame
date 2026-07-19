@@ -1,0 +1,10 @@
+[plugin]
+enabled = true
+config_version = "1.0.0"
+
+[game]
+default_gifts = ["花束", "手工饼干", "音乐盒", "巧克力"]
+
+[data]
+data_dir = "plugins/visual_novel/data"
+save_dir = "plugins/visual_novel/data/saves"

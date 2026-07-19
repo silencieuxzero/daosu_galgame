@@ -6,6 +6,7 @@
 - affection：好感度系统，管理角色好感度的数值与等级
 - notebook：记事本与线索系统，记录对话中发现的喜好线索
 - interaction：互动行为系统，支持礼物赠送与邀约活动
+- said：分段式剧情对话系统，支持 /dsv said 命令的交互式剧情推进
 - save_manager：存档系统，支持多槽位 JSON 持久化
 
 所有模块通过 renderer.py 统一加载与调度，模块间通过交叉引用协作。

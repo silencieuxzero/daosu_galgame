@@ -33,6 +33,7 @@ class GameState(Enum):
     NOTEBOOK = auto()      # 记事本：查看已收集的角色线索
     SAVE_MENU = auto()     # 存档/读档：管理保存进度
     AWAITING_CHOICE = auto()  # 等待玩家选择：对话中出现分支选项
+    SAID_SCRIPT = auto()     # 分段式剧情对话（/dsv said 命令触发的交互模式）
 
 
 # 合法的状态转换映射表
@@ -80,7 +81,15 @@ _ALLOWED_TRANSITIONS: dict[GameState, set[GameState]] = {
         GameState.MAIN_MENU,
         GameState.DIALOGUE,
     },
-    GameState.AWAITING_CHOICE: {GameState.DIALOGUE, GameState.EVENT, GameState.EXPLORATION},
+    GameState.AWAITING_CHOICE: {
+        GameState.DIALOGUE, GameState.EVENT, GameState.EXPLORATION,
+        GameState.MAIN_MENU, GameState.SAID_SCRIPT,
+    },
+    GameState.SAID_SCRIPT: {
+        GameState.AWAITING_CHOICE,
+        GameState.EXPLORATION,
+        GameState.MAIN_MENU,
+    },
 }
 
 

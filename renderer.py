@@ -18,10 +18,12 @@ from typing import Any
 
 from .core.fsm import GameState, StateMachine
 from .modules.affection import AffectionManager
+from .modules.forward import ForwardService
 from .modules.character import CharacterManager
 from .modules.dialogue import DialogueManager
 from .modules.interaction import InteractionManager
 from .modules.notebook import NotebookManager
+from .modules.said import SaidManager
 from .modules.save_manager import SaveManager
 
 
@@ -45,12 +47,15 @@ class VisualNovelRenderer:
         result = await renderer.start_exploration("洛疏律")
     """
 
-    def __init__(self, data_dir: str, save_dir: str, **config: Any) -> None:
+    def __init__(self, data_dir: str, save_dir: str,
+                 forward_service: ForwardService | None = None, **config: Any) -> None:
         """初始化渲染器并实例化所有模块。
 
         Args:
             data_dir: 数据目录的绝对路径（包含 characters/ 和 events/ 子目录）。
             save_dir: 存档目录的绝对路径。
+            forward_service: ForwardService 实例，用于合并转发/直发消息。为 None 时
+                             调用方需自行处理消息发送（兼容旧模式）。
             config: 额外配置项：
                 - max_save_slots: 最大存档槽位数（默认 20）。
                 - tutorial_enabled: 是否启用新手引导（默认 True）。
@@ -61,6 +66,7 @@ class VisualNovelRenderer:
         """
         self._data_dir = data_dir
         self._save_dir = save_dir
+        self._forward_service = forward_service
 
         # 提取配置
         self._tutorial_enabled: bool = config.get("tutorial_enabled", True)
@@ -83,6 +89,7 @@ class VisualNovelRenderer:
         self._notebook_mgr = NotebookManager(save_dir)
         self._dialogue_mgr = DialogueManager(os.path.join(data_dir, "events"))
         self._interaction_mgr = InteractionManager(self._affection_mgr, self._notebook_mgr)
+        self._said_mgr = SaidManager(os.path.join(data_dir, "said"), self._affection_mgr)
         self._save_mgr = SaveManager(save_dir, slot_count=max_save_slots)
 
         # 注入交叉引用：好感度管理器需要角色管理器获取性格标签
@@ -90,6 +97,7 @@ class VisualNovelRenderer:
 
         # 初始化标记
         self._initialized = False
+        self._is_tutorial = False  # 标记当前是否处于教程模式，用于结束时正确转换状态
 
     @property
     def fsm(self) -> StateMachine:
@@ -117,8 +125,17 @@ class VisualNovelRenderer:
         return self._interaction_mgr
 
     @property
+    def said(self) -> SaidManager:
+        return self._said_mgr
+
+    @property
     def save_manager(self) -> SaveManager:
         return self._save_mgr
+
+    @property
+    def forward_service(self) -> ForwardService | None:
+        """获取 ForwardService 实例。"""
+        return self._forward_service
 
     # ==================== 生命周期 ====================
 
@@ -133,6 +150,7 @@ class VisualNovelRenderer:
 
         self._character_mgr.load_all()
         self._dialogue_mgr.load_all_scripts()
+        self._said_mgr.load_all_scripts()
         self._notebook_mgr.load()
 
         self._initialized = True
@@ -158,14 +176,11 @@ class VisualNovelRenderer:
 
     # ==================== 游戏流程控制 ====================
 
-    async def start_game(self, label: str = "") -> dict[str, Any]:
+    async def start_game(self) -> dict[str, Any]:
         """开始新游戏。
 
         首次游玩时自动进入新手引导（TUTORIAL 状态），
         非首次直接进入 MAIN_MENU。
-
-        Args:
-            label: 存档标签（暂未使用）。
 
         Returns:
             包含角色列表的启动结果字典。首次游玩时返回引导对话内容。
@@ -192,6 +207,7 @@ class VisualNovelRenderer:
         切换到 TUTORIAL 状态并加载引导对话脚本的起始节点。
         """
         self._fsm.transition_to(GameState.TUTORIAL)
+        self._is_tutorial = True
 
         node = self._dialogue_mgr.start_script(self._tutorial_script_id)
         if node is None:
@@ -295,6 +311,9 @@ class VisualNovelRenderer:
     async def make_choice(self, choice_index: int) -> dict[str, Any]:
         """玩家选择选项后推进对话。
 
+        支持常规对话和 said 对话两种模式，根据当前 FSM 状态自动路由。
+        said 模式（SAID_SCRIPT/AWAITING_CHOICE）下路由到 said_make_choice。
+
         处理流程：
         1. 根据选项推进到下一节点
         2. 记录玩家选择到存档管理器
@@ -307,6 +326,10 @@ class VisualNovelRenderer:
         Returns:
             选择后的对话节点或错误信息。
         """
+        # said 模式路由
+        if self._fsm.current_state in (GameState.SAID_SCRIPT, GameState.AWAITING_CHOICE) and self._said_mgr.is_active():
+            return await self.said_make_choice(choice_index)
+
         current_node = self._dialogue_mgr.get_current_node()
         if current_node is None:
             return {"success": False, "message": "当前没有活跃的对话。"}
@@ -337,13 +360,45 @@ class VisualNovelRenderer:
         if next_node.has_choices():
             self._fsm.transition_to(GameState.AWAITING_CHOICE)
         elif next_node.next_node is None:
-            # 选择后到达终点节点，自动结束对话
-            return await self.advance_dialogue()
+            # 选择后到达终点节点：显示节点文本后结束对话
+            result: dict[str, Any] = {"success": True, "dialogue_ended": True}
+            self._dialogue_mgr.end_current()
+
+            if self._is_tutorial:
+                self._fsm.transition_to(GameState.MAIN_MENU)
+                speaker_label = "📖 新手引导" if next_node.speaker == "narrator" else f"💬 {next_node.speaker}"
+                result["message"] = (
+                    f"{speaker_label}\n{next_node.text}\n\n"
+                    "新手引导完成！输入 /dsv explore <角色名> 开始你的茶馆之旅吧。"
+                )
+                result["characters"] = self._character_mgr.list_characters()
+                self._is_tutorial = False
+            else:
+                self._fsm.transition_to(GameState.EXPLORATION)
+                speaker_label = "📖" if next_node.speaker == "narrator" else f"💬 {next_node.speaker}"
+                lines = [f"{speaker_label}\n{next_node.text}"]
+                # 扫描线索
+                if next_node.speaker != "narrator":
+                    new_clues = self._notebook_mgr.scan_text_for_clues(
+                        next_node.text, next_node.speaker
+                    )
+                    if new_clues:
+                        lines.append(f"\n（在对话中发现了 {len(new_clues)} 条新线索）")
+                lines.append("\n对话已结束。")
+                result["message"] = "\n".join(lines)
+
+            return result
+        elif self._fsm.current_state != GameState.DIALOGUE:
+            # 线性推进节点，切换回 DIALOGUE 状态
+            self._fsm.transition_to(GameState.DIALOGUE)
 
         return self._format_dialogue_node(next_node)
 
     async def advance_dialogue(self) -> dict[str, Any]:
         """自动推进对话（无选项时的线性推进）。
+
+        支持常规对话和 said 对话两种模式，根据当前 FSM 状态自动路由。
+        said 模式（SAID_SCRIPT/AWAITING_CHOICE）下路由到 said_advance。
 
         如果当前节点有选项，则返回 AWAITING_CHOICE 状态等待玩家选择。
         如果对话结束，回到 EXPLORATION 状态并扫描线索。
@@ -351,6 +406,10 @@ class VisualNovelRenderer:
         Returns:
             推进后的结果，包含下一节点、等待选择或对话结束标记。
         """
+        # said 模式路由
+        if self._fsm.current_state in (GameState.SAID_SCRIPT, GameState.AWAITING_CHOICE) and self._said_mgr.is_active():
+            return await self.said_advance()
+
         current_node = self._dialogue_mgr.get_current_node()
         if current_node is None:
             return {"success": False, "message": "当前没有活跃的对话。"}
@@ -362,6 +421,7 @@ class VisualNovelRenderer:
             return {
                 "success": True,
                 "awaiting_choice": True,
+                "text": current_node.text,
                 "choices": choices,
                 "message": "请做出选择。",
             }
@@ -373,7 +433,8 @@ class VisualNovelRenderer:
             self._dialogue_mgr.end_current()
 
             # 引导模式结束后进入主菜单，正常模式回到探索
-            if self._fsm.current_state == GameState.TUTORIAL:
+            if self._is_tutorial:
+                self._is_tutorial = False
                 self._fsm.transition_to(GameState.MAIN_MENU)
                 return {
                     "success": True,
@@ -460,6 +521,25 @@ class VisualNovelRenderer:
             result["awaiting_choice"] = True
 
         return result
+
+    async def send_dialogue_display(
+        self,
+        stream_id: str,
+        result: dict[str, Any],
+    ) -> None:
+        """格式化对话节点数据并通过 ForwardService 发送。
+
+        由 plugin.py 调用，将 renderer 返回的对话节点数据格式化为用户可读文本
+        并通过 ForwardService 发送（转发或直发）。
+
+        Args:
+            stream_id: 消息流 ID。
+            result: renderer 返回的对话节点数据（如 advance_dialogue / make_choice 结果）。
+        """
+        if self._forward_service is None:
+            return
+        bot_name = self._forward_service._bot_name  # noqa: SLF001
+        await self._forward_service.send_dialogue(stream_id, result, bot_name)
 
     async def end_dialogue(self) -> dict[str, Any]:
         """结束当前对话，返回上一个模式。
@@ -601,6 +681,141 @@ class VisualNovelRenderer:
             "character": character_name,
         }
 
+    # ==================== 分段式剧情对话（/dsv said） ====================
+
+    async def start_said(self, character_name: str) -> dict[str, Any]:
+        """启动与指定角色的分段式剧情对话。
+
+        验证角色存在且有所属的 said 脚本，切换到 SAID_SCRIPT 状态，
+        返回第一个剧情节点。
+
+        Args:
+            character_name: 角色名称。
+
+        Returns:
+            首个剧情节点数据，或错误信息。
+        """
+        if not self._initialized:
+            await self.initialize()
+
+        # 验证角色是否存在
+        try:
+            self._character_mgr.get_character(character_name)
+        except Exception as e:
+            return {"success": False, "message": str(e)}
+
+        # 检查是否有 said 脚本
+        script = self._said_mgr.get_script_for_character(character_name)
+        if script is None:
+            return {"success": False, "message": f"角色 '{character_name}' 暂无可用的剧情对话。"}
+
+        # 如果有进行中的对话，先结束
+        if self._said_mgr.is_active():
+            self._said_mgr.end_dialogue()
+
+        # 切换状态
+        if self._fsm.current_state != GameState.SAID_SCRIPT:
+            self._fsm.transition_to(GameState.SAID_SCRIPT)
+
+        # 启动脚本
+        result = self._said_mgr.start_script_for_character(character_name)
+        if result.get("success"):
+            result["state"] = GameState.SAID_SCRIPT.name
+            result["title"] = script.title
+            # 附加好感度信息
+            affection_value = self._affection_mgr.get_value(character_name)
+            affection_level = self._affection_mgr.get_level(character_name)
+            result["affection_value"] = affection_value
+            result["affection_level"] = affection_level
+
+        return result
+
+    async def said_make_choice(self, choice_index: int) -> dict[str, Any]:
+        """在 said 对话中选择选项。
+
+        Args:
+            choice_index: 选项索引（从 0 开始）。
+
+        Returns:
+            选择后的结果，包含好感度变化等信息。
+        """
+        if not self._said_mgr.is_active():
+            return {"success": False, "message": "当前没有活跃的剧情对话。"}
+
+        result = self._said_mgr.make_choice(choice_index)
+        if not result.get("success"):
+            return result
+
+        # 在文本中附加好感度反馈
+        affection_change = result.get("affection_change", 0)
+        if affection_change != 0:
+            sign = "+" if affection_change > 0 else ""
+            total_aff = result.get("total_affection", 0)
+            aff_text = f"\n\n💕 好感度 {sign}{affection_change}（当前：{total_aff}）"
+            new_text = result.get("text", "")
+            if new_text:
+                result["text"] = new_text + aff_text
+
+        # 更新 FSM 状态
+        if result.get("dialogue_ended"):
+            self._said_mgr.end_dialogue()
+            if self._fsm.current_state == GameState.SAID_SCRIPT:
+                self._fsm.transition_to(GameState.EXPLORATION)
+            return result
+
+        # 有选项时切换为等待选择状态
+        if result.get("awaiting_choice"):
+            if self._fsm.current_state != GameState.AWAITING_CHOICE:
+                self._fsm.transition_to(GameState.AWAITING_CHOICE)
+        else:
+            if self._fsm.current_state != GameState.SAID_SCRIPT:
+                self._fsm.transition_to(GameState.SAID_SCRIPT)
+
+        return result
+
+    async def said_advance(self) -> dict[str, Any]:
+        """推进 said 对话（当前节点无选项时使用）。
+
+        Returns:
+            下一节点数据或结束标记。
+        """
+        if not self._said_mgr.is_active():
+            return {"success": False, "message": "当前没有活跃的剧情对话。"}
+
+        result = self._said_mgr.advance()
+        if not result.get("success"):
+            return result
+
+        if result.get("dialogue_ended"):
+            self._said_mgr.end_dialogue()
+            if self._fsm.current_state == GameState.SAID_SCRIPT:
+                self._fsm.transition_to(GameState.EXPLORATION)
+            return result
+
+        if result.get("awaiting_choice"):
+            if self._fsm.current_state != GameState.AWAITING_CHOICE:
+                self._fsm.transition_to(GameState.AWAITING_CHOICE)
+
+        return result
+
+    async def said_end(self) -> dict[str, Any]:
+        """结束当前 said 对话。
+
+        Returns:
+            操作结果。
+        """
+        if not self._said_mgr.is_active():
+            return {"success": False, "message": "当前没有活跃的剧情对话。"}
+
+        self._said_mgr.end_dialogue()
+        if self._fsm.current_state in (GameState.SAID_SCRIPT, GameState.AWAITING_CHOICE):
+            if self._fsm.can_transition_to(GameState.EXPLORATION):
+                self._fsm.transition_to(GameState.EXPLORATION)
+            else:
+                self._fsm.transition_to(GameState.MAIN_MENU)
+
+        return {"success": True, "message": "已退出剧情对话模式。"}
+
     # ==================== 查询接口 ====================
 
     async def get_game_status(self) -> dict[str, Any]:
@@ -618,6 +833,11 @@ class VisualNovelRenderer:
             "characters": self._character_mgr.list_characters(),
             "affection_states": self._affection_mgr.dump_state(),
             "in_dialogue": self._dialogue_mgr.get_current_node() is not None,
+            "in_said_dialogue": self._said_mgr.is_active(),
+            "said_character": self._said_mgr.get_current_script().character_name
+                if self._said_mgr.get_current_script() else None,
+            "said_title": self._said_mgr.get_current_script().title
+                if self._said_mgr.get_current_script() else None,
             "available_scripts": self._dialogue_mgr.list_scripts(),
             "save_slots": self._save_mgr.scan_slots(),
         }

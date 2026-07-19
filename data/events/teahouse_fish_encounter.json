@@ -1,9 +1,8 @@
 {
-  /* 对话脚本：鱼池边的茶客 — 与查维尔的初次茶馆相遇 */
-  "script_id": "teahouse_fish_encounter",   // 脚本唯一标识
-  "title": "鱼池边的茶客",                   // 脚本标题
-  "start_node": "start",                     // 脚本起始节点 ID
-  "characters": ["查维尔"],                  // 登场角色列表
+  "script_id": "teahouse_fish_encounter",
+  "title": "鱼池边的茶客",
+  "start_node": "start",
+  "characters": ["查维尔"],
   "nodes": {
     "start": {
       "speaker": "narrator",
@@ -19,8 +18,8 @@
         {
           "text": "你在看什么呢？",
           "next_node": "ask_looking",
-          "option_id": "curious",           // 关联好感度规则选项 ID
-          "affection_change": 2             // 直接好感度变动量
+          "option_id": "curious",
+          "affection_change": 2
         },
         {
           "text": "听说你后院养了鱼？",
@@ -45,7 +44,7 @@
     "ask_fish": {
       "speaker": "查维尔",
       "text": "（眼神明显亮了一下，随即又故作淡然）嗯。养在后院水池里。蓝鳞丝绸鱼，很好看……不过它们怕生。",
-      "emotion": "happy",                    // 情绪：高兴
+      "emotion": "happy",
       "next_node": "small_talk"
     },
     "sit_nearby": {
@@ -57,7 +56,7 @@
     "small_talk": {
       "speaker": "查维尔",
       "text": "（抿了一口茶，忽然开口）喂——你说，如果有一天你发现……自己根本不是你以为的那种人，你会怎么办？",
-      "emotion": "warm",                     // 情绪：温和/温暖的对话氛围
+      "emotion": "warm",
       "choices": [
         {
           "text": "那就做现在的自己就好。",
@@ -69,13 +68,13 @@
           "text": "哈哈，你说话好奇怪啊。",
           "next_node": "tease",
           "option_id": "joking",
-          "affection_change": -2            // 开玩笑会降低好感度
+          "affection_change": -2
         },
         {
           "text": "静静听着",
           "next_node": "listen_end",
           "option_id": "listen_quietly",
-          "affection_change": 5             // 倾听获得较高好感
+          "affection_change": 5
         }
       ]
     },
@@ -94,14 +93,14 @@
     "listen_end": {
       "speaker": "查维尔",
       "text": "（沉默了很久，最后轻轻叹了口气）有时候觉得，鱼比人好懂多了。它们想要什么，一目了然。（转头看向窗外）不像人，也不像我自己。",
-      "emotion": "touched",                  // 情绪：被触动/感动
+      "emotion": "touched",
       "next_node": "end"
     },
     "end": {
       "speaker": "narrator",
       "text": "茶渐渐凉了。那个人又恢复了最初的模样，安静地坐在窗边，目光追随着窗外流动的云。仿佛刚才那段对话从未发生过。",
       "emotion": "neutral",
-      "next_node": null                      // null 表示对话结束
+      "next_node": null
     }
   },
   "metadata": {

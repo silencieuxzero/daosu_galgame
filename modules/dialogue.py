@@ -167,7 +167,7 @@ class DialogueManager:
 
         在插件运行时配置更新后调用。
         """
-        self.load_all()
+        self.load_all_scripts()
 
     def _parse_script(self, data: dict[str, Any]) -> DialogueScript:
         """解析 JSON 数据为 DialogueScript 对象。
@@ -236,7 +236,7 @@ class DialogueManager:
             起始对话节点，如果脚本不存在则返回 None。
         """
         if not self._script_loaded:
-            self.load_all()
+            self.load_all_scripts()
 
         script = self._scripts.get(script_id)
         if script is None:
@@ -351,7 +351,7 @@ class DialogueManager:
             脚本对象，不存在时返回 None。
         """
         if not self._script_loaded:
-            self.load_all()
+            self.load_all_scripts()
         return self._scripts.get(script_id)
 
     def list_scripts(self) -> list[str]:
@@ -361,5 +361,5 @@ class DialogueManager:
             脚本 ID 列表，如 ["flower_shop_encounter", "teahouse_fish_encounter"]。
         """
         if not self._script_loaded:
-            self.load_all()
+            self.load_all_scripts()
         return list(self._scripts.keys())

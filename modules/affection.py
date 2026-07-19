@@ -358,12 +358,14 @@ class AffectionManager:
         value = self.get_value(character_name)
         thresholds = character.affection_thresholds
 
-        # 找到所有满足条件的阈值中事件 ID
-        # 注意：这里返回的是最后一个满足条件的，不是"最近"的
+        # 找出所有满足条件的阈值中阈值最高的那个事件
+        best_event_id: str | None = None
+        best_threshold: int = -999
         for event_id, threshold_value in thresholds.items():
-            if value >= threshold_value:
-                return event_id
-        return None
+            if value >= threshold_value and threshold_value > best_threshold:
+                best_threshold = threshold_value
+                best_event_id = event_id
+        return best_event_id
 
     def get_all_states(self) -> dict[str, AffectionState]:
         """获取所有角色的好感度状态。

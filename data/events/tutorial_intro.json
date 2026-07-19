@@ -1,5 +1,4 @@
 {
-  /* 新手引导对话脚本 — 首次进入游戏时的交互式教程 */
   "script_id": "tutorial_intro",
   "title": "新手引导",
   "start_node": "start",

@@ -1,9 +1,8 @@
 {
-  /* 对话脚本：茶馆雨遇 — 与洛疏律在雨天的初次邂逅 */
-  "script_id": "teahouse_encounter",        // 脚本唯一标识
-  "title": "茶馆雨遇",                      // 脚本标题
-  "start_node": "start",                     // 脚本起始节点 ID
-  "characters": ["洛疏律"],                  // 登场角色列表
+  "script_id": "teahouse_encounter",
+  "title": "茶馆雨遇",
+  "start_node": "start",
+  "characters": ["洛疏律"],
   "nodes": {
     "start": {
       "speaker": "narrator",
@@ -19,20 +18,20 @@
         {
           "text": "你在写什么？",
           "next_node": "ask_notebook",
-          "option_id": "curious",           // 关联好感度规则选项 ID
-          "affection_change": 2             // 直接好感度变动量
+          "option_id": "curious",
+          "affection_change": 2
         },
         {
           "text": "来一壶蜂蜜柚子茶。",
           "next_node": "order_tea",
           "option_id": "same_taste",
-          "affection_change": 3             // 点相同的茶增加好感
+          "affection_change": 3
         },
         {
           "text": "一个人坐角落。",
           "next_node": "sit_alone",
           "option_id": "keep_distance",
-          "affection_change": 0             // 保持距离，好感不变
+          "affection_change": 0
         }
       ]
     },
@@ -45,7 +44,7 @@
     "order_tea": {
       "speaker": "洛疏律",
       "text": "（终于放下笔，微微抬眼）蜂蜜柚子茶？好品味……这也是我最喜欢的。",
-      "emotion": "happy",                    // 情绪：高兴
+      "emotion": "happy",
       "next_node": "small_talk"
     },
     "sit_alone": {
@@ -57,7 +56,7 @@
     "small_talk": {
       "speaker": "洛疏律",
       "text": "（不知何时走到你桌旁，端着一杯冒着热气的茶）下雨天的茶馆总是特别安静……我很喜欢这样的氛围。你不觉得吗？",
-      "emotion": "warm",                     // 情绪：温和/温暖的对话氛围
+      "emotion": "warm",
       "choices": [
         {
           "text": "是啊，雨天和热茶很配。",
@@ -69,13 +68,13 @@
           "text": "你天天待在这儿不无聊吗？",
           "next_node": "tease",
           "option_id": "joking",
-          "affection_change": -2            // 调侃会略微降低好感
+          "affection_change": -2
         },
         {
           "text": "静静听着",
           "next_node": "listen_end",
           "option_id": "listen_quietly",
-          "affection_change": 5             // 倾听获得较高好感
+          "affection_change": 5
         }
       ]
     },
@@ -94,14 +93,14 @@
     "listen_end": {
       "speaker": "洛疏律",
       "text": "（在旁边的椅子上坐下，目光看向窗外的雨）有时候觉得，雨声比任何音乐都让人安心……（声音渐轻）谢谢你没有嫌我闷。",
-      "emotion": "touched",                  // 情绪：被触动/感动
+      "emotion": "touched",
       "next_node": "end"
     },
     "end": {
       "speaker": "narrator",
       "text": "雨渐渐停了，夕阳的余晖透过窗棂洒进来。你起身离开时，看见他又从口袋里掏出那本A5笔记本，低头写着什么。",
       "emotion": "neutral",
-      "next_node": null                      // null 表示对话结束
+      "next_node": null
     }
   },
   "metadata": {

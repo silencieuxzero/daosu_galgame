@@ -17,11 +17,11 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from maibot_sdk import Command, MaiBotPlugin, Tool
-from maibot_sdk.types import ToolParameterInfo, ToolParamType
+from maibot_sdk import Command, HookHandler, MaiBotPlugin, Tool
+from maibot_sdk.types import ErrorPolicy, HookMode, HookOrder, ToolParameterInfo, ToolParamType
 
 from .config import VisualNovelPluginConfig
-from .modules.forward import ForwardMessageCollector
+from .modules.forward import ForwardService
 from .renderer import VisualNovelRenderer
 
 
@@ -47,9 +47,6 @@ class VisualNovelPlugin(MaiBotPlugin):
     def __init__(self) -> None:
         super().__init__()
         self._renderer: VisualNovelRenderer | None = None
-        self._collector: ForwardMessageCollector | None = None
-        # 标记当前是否处于收集模式（对话/引导流程中）
-        self._collecting_streams: set[str] = set()
 
     # ==================== 生命周期 ====================
 
@@ -67,9 +64,18 @@ class VisualNovelPlugin(MaiBotPlugin):
         os.makedirs(data_dir, exist_ok=True)
         os.makedirs(save_dir, exist_ok=True)
 
+        # 初始化合并转发服务
+        forward_service = ForwardService(
+            send_text=self.ctx.send.text,
+            send_forward=self.ctx.send.forward,
+            enabled=self.config.forward.enabled,
+            bot_name=self.config.forward.bot_name,
+        )
+
         self._renderer = VisualNovelRenderer(
             data_dir,
             save_dir,
+            forward_service=forward_service,
             tutorial_enabled=self.config.tutorial.enabled,
             tutorial_script_id=self.config.tutorial.script_id,
             affection_initial=self.config.affection.initial_value,
@@ -79,16 +85,6 @@ class VisualNovelPlugin(MaiBotPlugin):
         )
         await self._renderer.initialize()
 
-        # 初始化合并转发收集器
-        self._collector = ForwardMessageCollector(
-            bot_uin="",
-            bot_name=self.config.forward.bot_name,
-            napcat_url=self.config.forward.napcat_url,
-            auto_flush=self.config.forward.auto_flush,
-            display_title=self.config.forward.display_title,
-            request_timeout=self.config.forward.request_timeout,
-        )
-
     async def on_unload(self) -> None:
         """插件卸载时清理资源。
 
@@ -97,8 +93,6 @@ class VisualNovelPlugin(MaiBotPlugin):
         if self._renderer:
             await self._renderer.shutdown()
             self._renderer = None
-        self._collector = None
-        self._collecting_streams.clear()
 
     async def on_config_update(self, scope: str, config_data: dict[str, object], version: str) -> None:
         """配置热更新。
@@ -113,6 +107,37 @@ class VisualNovelPlugin(MaiBotPlugin):
         del scope, config_data, version
         if self._renderer:
             await self._renderer.reload()
+
+    # ==================== 跳过 Planner ====================
+
+    @HookHandler(
+        "chat.command.after_execute",
+        name="dsv_skip_planner",
+        description="确保 /dsv 命令处理后不进入 Planner/LLM 处理链",
+        mode=HookMode.BLOCKING,
+        order=HookOrder.LATE,
+        error_policy=ErrorPolicy.LOG,
+    )
+    async def skip_planner_after_command(self, **kwargs: Any) -> dict[str, Any]:
+        """命令执行后标记消息已被消费，避免进入 Planner/LLM 处理链。
+
+        所有 /dsv 开头的命令都应直接返回结果，不需要 LLM 进一步处理。
+        此钩子在命令执行后设置 intercept_message_level = 1，阻止消息流入
+        MaiBot 的 Planner 流程。
+
+        Args:
+            kwargs: 包含 command_name、success、response、intercept_message_level 等。
+
+        Returns:
+            非 dsv 命令返回 continue 放行；dsv 命令设置拦截等级阻止后续处理。
+        """
+        command_name = str(kwargs.get("command_name", "") or kwargs.get("name", ""))
+        if not command_name.startswith("dsv_"):
+            return {"action": "continue"}
+        return {
+            "intercept_message_level": 1,
+            "continue_process": False,
+        }
 
     def _resolve_path(self, project_root: str, configured_path: str) -> str:
         """解析配置中的路径。
@@ -129,97 +154,6 @@ class VisualNovelPlugin(MaiBotPlugin):
         if os.path.isabs(configured_path):
             return configured_path
         return os.path.join(project_root, configured_path)
-
-    async def _send_dialogue_display(self, result: dict[str, Any], stream_id: str) -> None:
-        """将对话节点结果格式化为用户可读文本并发送。
-
-        根据节点类型（旁白/角色、有选项/无选项）生成不同的展示格式。
-
-        Args:
-            result: renderer 返回的对话节点数据。
-            stream_id: 消息流 ID。
-        """
-        speaker = result.get("speaker", "")
-        text = result.get("text", "")
-        emotion = result.get("emotion", "neutral")
-        is_tutorial = result.get("is_tutorial", False)
-
-        # 格式化说话者标签
-        if speaker == "narrator":
-            header = "📖" if not is_tutorial else "📖 新手引导"
-        else:
-            header = f"💬 {speaker}"
-
-        lines = [f"{header}\n{text}"]
-
-        choices = result.get("choices")
-        if choices:
-            lines.append("\n请选择：")
-            for c in choices:
-                lines.append(f"  /dsv choose {c['index']} — {c['text']}")
-        else:
-            lines.append("\n—— 输入 /dsv next 继续 ——")
-
-        # 发送消息（通过合并转发管道或直接发送）
-        sender = speaker if speaker != "narrator" else self.config.forward.bot_name
-        await self._send_msg("\n".join(lines), stream_id, sender)
-
-    # ==================== 合并转发辅助方法 ====================
-
-    def _is_forward_enabled(self) -> bool:
-        """检查合并转发是否启用。
-
-        Returns:
-            转发功能启用且收集器已初始化时返回 True。
-        """
-        return (
-            self.config.forward.enabled
-            and self._collector is not None
-        )
-
-    def _start_collecting(self, stream_id: str) -> None:
-        """标记指定会话进入收集模式。
-
-        在收集模式下，所有 _send_msg 调用会将消息缓冲到收集器，
-        而非直接发送。
-
-        Args:
-            stream_id: 消息流 ID。
-        """
-        self._collecting_streams.add(stream_id)
-
-    async def _flush_collected(self, stream_id: str) -> None:
-        """结束收集模式并发送合并转发消息。
-
-        将缓冲区中的所有消息通过 NapCat 合并转发发送，
-        然后退出收集模式并清空缓冲区。
-
-        Args:
-            stream_id: 消息流 ID。
-        """
-        self._collecting_streams.discard(stream_id)
-        if self._is_forward_enabled() and self._collector:
-            result = await self._collector.flush(stream_id)
-            if not result.get("success"):
-                # 发送失败时降级：不阻塞用户
-                pass
-
-    async def _send_msg(self, content: str, stream_id: str, sender: str = "") -> None:
-        """发送消息（根据配置选择收集或直发）。
-
-        - 合并转发启用 + 收集模式：缓冲到收集器，等待合并发送
-        - 其他情况：直接通过 ctx.send.text 发送
-
-        Args:
-            content: 消息文本内容。
-            stream_id: 消息流 ID。
-            sender: 发送者名称（用于合并转发节点）。
-        """
-        if self._is_forward_enabled() and stream_id in self._collecting_streams:
-            sender_name = sender or self.config.forward.bot_name
-            self._collector.add(stream_id, sender_name, content)
-        else:
-            await self.ctx.send.text(content, stream_id)
 
     # ==================== Command 命令 ====================
 
@@ -243,9 +177,8 @@ class VisualNovelPlugin(MaiBotPlugin):
         result = await self._renderer.start_game()
 
         if result.get("is_tutorial"):
-            self._start_collecting(stream_id)
-            await self._send_dialogue_display(result, stream_id)
-            return True, "进入新手引导", True
+            await self._renderer.send_dialogue_display(stream_id, result)
+            return True, "进入新手引导", False
 
         # 非首次/非引导：直接发送
         await self.ctx.send.text(
@@ -294,7 +227,7 @@ class VisualNovelPlugin(MaiBotPlugin):
             f"  /dsv status — 状态",
             stream_id,
         )
-        return True, f"开始与 {character_name} 探索", True
+        return True, f"开始与 {character_name} 探索", False
 
     @Command(
         "dsv_status",
@@ -319,6 +252,13 @@ class VisualNovelPlugin(MaiBotPlugin):
             f"当前状态：{status['state']}",
             f"角色：{'、'.join(status['characters'])}",
         ]
+
+        # 如果在 said 对话模式中，显示当前角色
+        if status.get("in_said_dialogue"):
+            said_char = status.get("said_character", "")
+            said_title = status.get("said_title", "")
+            lines.append(f"剧情对话：{said_char} - {said_title}")
+
         for name, state_data in status.get("affection_states", {}).items():
             lines.append(f"  {name}：好感度 {state_data['value']}（{state_data['level']}）")
 
@@ -350,7 +290,7 @@ class VisualNovelPlugin(MaiBotPlugin):
 
         result = await self._renderer.show_notebook(character_name)
         await self.ctx.send.text(result["summary"], stream_id)
-        return True, "已显示记事本", True
+        return True, "已显示记事本", False
 
     @Command(
         "dsv_gift",
@@ -487,7 +427,7 @@ class VisualNovelPlugin(MaiBotPlugin):
             return False, result.get("message", "读档失败。"), True
 
         await self.ctx.send.text(result["message"], stream_id)
-        return True, result["message"], True
+        return True, result["message"], False
 
     @Command(
         "dsv_help",
@@ -510,6 +450,8 @@ class VisualNovelPlugin(MaiBotPlugin):
             "  /dsv start — 启动游戏（首次自动进入引导）\n"
             "  /dsv tutorial — 重新查看新手引导\n"
             "  /dsv explore <角色名> — 与角色开始日常对话\n"
+            "  /dsv said <角色名> — 与角色进行分段式剧情对话\n"
+            "  /dsv said_exit — 退出剧情对话模式\n"
             "  /dsv next — 推进对话\n"
             "  /dsv choose <编号> — 选择对话选项\n"
             "  /dsv gift <角色名> <礼物名> — 赠送礼物\n"
@@ -523,6 +465,93 @@ class VisualNovelPlugin(MaiBotPlugin):
         )
         await self.ctx.send.text(help_text, stream_id)
         return True, "已显示帮助信息", True
+
+    # ==================== /dsv said 命令 ====================
+
+    @Command(
+        "dsv_said",
+        description="与指定角色进行分段式剧情对话",
+        pattern=r"^/dsv said\s+(?P<character>.+)$",
+    )
+    async def handle_said_start(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
+        """启动与指定角色的分段式剧情对话模式。
+
+        自动加载角色对应 said 脚本并展示第一个剧情节点。
+        若有选项分支，显示选项列表供用户选择。
+
+        Args:
+            stream_id: 消息流 ID。
+            kwargs: 包含 matched_groups 中的 character 参数。
+
+        Returns:
+            Command 标准返回值。
+        """
+        matched_groups = kwargs.get("matched_groups", {})
+        character_name = str(matched_groups.get("character", "")).strip()
+
+        if not character_name:
+            return False, "请指定角色名。用法：/dsv said <角色名>", True
+
+        if self._renderer is None:
+            return False, "插件未正确加载。", True
+
+        result = await self._renderer.start_said(character_name)
+        if not result.get("success"):
+            return False, result.get("message", "启动剧情对话失败。"), True
+
+        # 构建显示文本
+        lines = [f"📖 {result.get('title', '剧情对话')}\n"]
+        speaker = result.get("speaker", "narrator")
+        if speaker == "narrator":
+            lines.append(f"{result['text']}")
+        else:
+            lines.append(f"💬 {speaker}\n{result['text']}")
+
+        # 好感度信息
+        affection_value = result.get("affection_value", 0)
+        affection_level = result.get("affection_level", "普通")
+        lines.append(f"\n好感度：{affection_value}（{affection_level}）")
+
+        # 选项
+        choices = result.get("choices", [])
+        if choices:
+            lines.append("\n请选择：")
+            for c in choices:
+                sign = "+" if c["affection_change"] > 0 else ""
+                aff_text = f" [好感 {sign}{c['affection_change']}]" if c["affection_change"] != 0 else ""
+                lines.append(f"  /dsv choose {c['index']} — {c['text']}{aff_text}")
+
+        lines.append("\n输入 /dsv said_exit 可随时退出剧情对话。")
+
+        content = "\n".join(lines)
+        fwd = self._renderer.forward_service
+        if fwd:
+            await fwd.send(stream_id, content)
+        else:
+            await self.ctx.send.text(content, stream_id)
+        return True, "剧情对话已启动", False
+
+    @Command(
+        "dsv_said_exit",
+        description="退出当前剧情对话模式",
+        pattern=r"^/dsv said_exit$",
+    )
+    async def handle_said_exit(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
+        """退出当前的剧情对话模式。
+
+        Returns:
+            Command 标准返回值。
+        """
+        del kwargs
+        if self._renderer is None:
+            return False, "插件未正确加载。", True
+
+        result = await self._renderer.said_end()
+        if not result.get("success"):
+            return False, result.get("message", "退出失败。"), True
+
+        await self.ctx.send.text(result["message"], stream_id)
+        return True, result["message"], True
 
     @Command(
         "dsv_tutorial",
@@ -543,9 +572,8 @@ class VisualNovelPlugin(MaiBotPlugin):
         if not result.get("success"):
             return False, result.get("message", "进入引导失败。"), True
 
-        self._start_collecting(stream_id)
-        await self._send_dialogue_display(result, stream_id)
-        return True, "进入新手引导", True
+        await self._renderer.send_dialogue_display(stream_id, result)
+        return True, "进入新手引导", False
 
     @Command(
         "dsv_skip_tutorial",
@@ -566,8 +594,6 @@ class VisualNovelPlugin(MaiBotPlugin):
         if not result.get("success"):
             return False, result.get("message", "跳过引导失败。"), True
 
-        # 跳过引导时：先发送已收集的消息（如果有），再发主菜单提示
-        await self._flush_collected(stream_id)
         await self.ctx.send.text(
             f"📖 已进入主菜单。\n"
             f"可用角色：{'、'.join(result.get('characters', []))}\n\n"
@@ -575,7 +601,7 @@ class VisualNovelPlugin(MaiBotPlugin):
             f"输入 /dsv tutorial 可重新查看引导",
             stream_id,
         )
-        return True, "已跳过新手引导", True
+        return True, "已跳过新手引导", False
 
     @Command(
         "dsv_next",
@@ -600,18 +626,23 @@ class VisualNovelPlugin(MaiBotPlugin):
             return False, result.get("message", "对话推进失败。"), True
 
         if result.get("dialogue_ended"):
-            # 先发送已收集的消息（合并转发）
-            await self._flush_collected(stream_id)
-            # 再发送结束提示
             chars = result.get("characters")
-            if chars:
+            fwd = self._renderer.forward_service
+            if chars and fwd:
+                await fwd.send(
+                    stream_id,
+                    f"{result['message']}\n\n可用角色：{'、'.join(chars)}",
+                )
+            elif fwd:
+                await fwd.send(stream_id, result["message"])
+            elif chars:
                 await self.ctx.send.text(
                     f"{result['message']}\n\n可用角色：{'、'.join(chars)}",
                     stream_id,
                 )
             else:
                 await self.ctx.send.text(result["message"], stream_id)
-            return True, "对话结束", True
+            return True, "对话结束", False
 
         if result.get("awaiting_choice"):
             # 有选项分支，显示选项
@@ -620,13 +651,20 @@ class VisualNovelPlugin(MaiBotPlugin):
             lines.append("\n请选择：")
             for c in choices:
                 lines.append(f"  /dsv choose {c['index']} — {c['text']}")
-            await self._send_msg("\n".join(lines), stream_id,
-                                 self.config.forward.bot_name)
-            return True, "等待选择", True
+            content = "\n".join(lines)
+            fwd = self._renderer.forward_service
+            if fwd:
+                await fwd.send(
+                    stream_id, content,
+                    nodes=[ForwardService.build_node(content, self.config.forward.bot_name)],
+                )
+            else:
+                await self.ctx.send.text(content, stream_id)
+            return True, "等待选择", False
 
         # 线性推进，显示下一节点
-        await self._send_dialogue_display(result, stream_id)
-        return True, "对话推进", True
+        await self._renderer.send_dialogue_display(stream_id, result)
+        return True, "对话推进", False
 
     @Command(
         "dsv_choose",
@@ -656,8 +694,29 @@ class VisualNovelPlugin(MaiBotPlugin):
         if not result.get("success"):
             return False, result.get("message", "选择无效。"), True
 
-        await self._send_dialogue_display(result, stream_id)
-        return True, f"已选择选项 {choice_index}", True
+        if result.get("dialogue_ended"):
+            # make_choice 到达终点节点已自动结束对话，发送结束信息
+            chars = result.get("characters")
+            fwd = self._renderer.forward_service
+            message = result.get("message", "对话已结束。")
+            if chars and fwd:
+                await fwd.send(
+                    stream_id,
+                    f"{message}\n\n可用角色：{'、'.join(chars)}",
+                )
+            elif fwd:
+                await fwd.send(stream_id, message)
+            elif chars:
+                await self.ctx.send.text(
+                    f"{message}\n\n可用角色：{'、'.join(chars)}",
+                    stream_id,
+                )
+            else:
+                await self.ctx.send.text(message, stream_id)
+            return True, "对话结束", False
+
+        await self._renderer.send_dialogue_display(stream_id, result)
+        return True, f"已选择选项 {choice_index}", False
 
     # ==================== Tool 工具（供 LLM 调用） ====================
 

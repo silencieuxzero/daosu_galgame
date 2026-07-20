@@ -146,9 +146,10 @@
 
 ---
 
-## 4. 分段式剧情对话 — `data/said/*.json`
+## 4. 分段式剧情对话 — `data/plot/*.json`
 
-供 `/dsv said <角色名>` 命令使用的交互式分段剧情，结构与事件脚本类似，但独立管理，专用于角色专属的剧情线。
+供 `/dsv plot <角色名>` 命令使用的交互式分段剧情，结构与事件脚本类似，但独立管理，专用于角色专属的剧情线。
+存储于 `data/plot/` 目录。
 
 **文件：** `luoshulv_said.json`、`xaviel_said.json`
 
@@ -157,7 +158,7 @@
 | 字段 | 类型 | 说明 |
 |------|------|------|
 | `script_id` | string | 脚本唯一标识 |
-| `character_name` | string | 关联的角色名称，用于 `/dsv said <角色名>` 匹配 |
+| `character_name` | string | 关联的角色名称，用于 `/dsv plot <角色名>` 匹配 |
 | `title` | string | 剧情标题 |
 | `start_node` | string | 起始节点 ID |
 | `nodes` | object | 节点字典，key 为节点 ID，value 为节点对象 |
@@ -226,8 +227,8 @@
 | `data/events/tutorial_intro.json` | 事件脚本 | 新手引导 |
 | `data/events/flower_shop_encounter.json` | 事件脚本 | 洛疏律的茶馆雨遇事件 |
 | `data/events/teahouse_fish_encounter.json` | 事件脚本 | 查维尔的鱼池事件 |
-| `data/said/luoshulv_said.json` | 分段剧情 | 洛疏律的交互式剧情线（13 节点） |
-| `data/said/xaviel_said.json` | 分段剧情 | 查维尔的交互式剧情线（12 节点） |
+| `data/plot/luoshulv_said.json` | 分段剧情 | 洛疏律的交互式剧情线（13 节点） |
+| `data/plot/xaviel_said.json` | 分段剧情 | 查维尔的交互式剧情线（12 节点） |
 
 ---
 

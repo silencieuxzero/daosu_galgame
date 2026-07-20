@@ -1,0 +1,111 @@
+{
+  "script_id": "luoshulv_02",
+  "character_name": "洛疏律",
+  "title": "茶香氤氲",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "你再次推开茶馆的门时，洛疏律已经坐在那个熟悉的位置上。今天的阳光格外明媚，窗外的树叶在微风中轻轻摇曳。他听到脚步声，抬头朝你点了点头。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "洛疏律",
+      "text": "「来了啊。」他放下手中的钢笔，「今天我泡了一壶龙井，要不要一起尝尝？」",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「好啊，龙井可是好茶。」",
+          "next_node": "share_tea",
+          "affection_change": 5
+        },
+        {
+          "text": "「你什么时候开始研究龙井了？」",
+          "next_node": "curious_about_tea",
+          "affection_change": 3
+        },
+        {
+          "text": "「我还是喝蜂蜜柚子茶吧。」",
+          "next_node": "stay_usual",
+          "affection_change": 0
+        }
+      ]
+    },
+    "share_tea": {
+      "speaker": "洛疏律",
+      "text": "他眼中一亮，取出一个干净的茶杯，为你斟上一杯。茶汤清澈透亮，带着淡淡的豆香。\n\n「这龙井是朋友从杭州带回来的，我一直没舍得开封。」他将茶杯轻轻推到你面前，「觉得怎么样？」",
+      "emotion": "happy",
+      "choices": [
+        {
+          "text": "「清香回甘，是好茶。」",
+          "next_node": "tea_talk",
+          "affection_change": 6
+        },
+        {
+          "text": "「我对茶不太懂，但觉得很好喝。」",
+          "next_node": "tea_talk",
+          "affection_change": 4
+        }
+      ]
+    },
+    "curious_about_tea": {
+      "speaker": "洛疏律",
+      "text": "他端起自己的茶杯，轻轻晃了晃。\n\n「其实也不是专门去研究的。」他笑了笑，「在茶馆待久了，自然而然就会知道一些。老板偶尔会跟我们讲茶的故事，听着听着就记住了。」",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「那你一定知道很多茶的故事。」",
+          "next_node": "story_time",
+          "affection_change": 5
+        },
+        {
+          "text": "「你平时在茶馆都做些什么？」",
+          "next_node": "daily_routine",
+          "affection_change": 3
+        }
+      ]
+    },
+    "stay_usual": {
+      "speaker": "洛疏律",
+      "text": "他点了点头，没有多说什么，转身去为你泡了蜂蜜柚子茶。回来后，他安静地坐回自己的位置，重新拿起钢笔，在笔记本上写着什么。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "tea_talk": {
+      "speaker": "洛疏律",
+      "text": "他端起自己的茶杯，小口啜饮着，目光变得柔和。\n\n「我以前其实不太喝茶的。」他轻声说，「总觉得太苦。后来在茶馆待久了，才知道苦后面有回甘——就像很多事情一样。」",
+      "emotion": "warm",
+      "choices": [
+        {
+          "text": "「你说话总是这么有哲理。」",
+          "next_node": "chapter_end",
+          "affection_change": 4
+        },
+        {
+          "text": "「你说得对，先苦后甜嘛。」",
+          "next_node": "chapter_end",
+          "affection_change": 3
+        }
+      ]
+    },
+    "story_time": {
+      "speaker": "洛疏律",
+      "text": "他想了一会儿，端起茶杯抿了一口。\n\n「嗯……比如说，你知道为什么龙井茶叫龙井吗？」他抬眼看了看你，见你摇头，便继续说道，「传说古时候有一口井，井水清甜，井里住着一条龙。后来龙飞走了，但井水依然甘甜，用来泡茶特别好喝。」\n\n他讲得很认真，语气平淡却带着一丝温柔。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "daily_routine": {
+      "speaker": "洛疏律",
+      "text": "他低头看了看手中的茶杯。\n\n「也没什么特别的。」他语气平淡，「帮老板收拾一下桌椅，泡泡茶，看看书，写写笔记……偶尔有客人来的时候聊几句。」他顿了顿，「像你这样。」",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "茶馆里播放着轻柔的乐曲，茶香在空气中缓缓流淌。窗外天色渐渐阴沉，似乎预示着一场雨的来临。你发现，每一次来都能看到洛疏律不同的一面——他的故事，似乎比想象中要多得多。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

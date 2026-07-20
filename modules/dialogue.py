@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..core.exceptions import DialogueScriptError
-from .character import _strip_json_comments
+from ..core.json_utils import strip_json_comments as _strip_json_comments
 
 
 @dataclass

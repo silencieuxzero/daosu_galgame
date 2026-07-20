@@ -1,0 +1,83 @@
+{
+  "script_id": "xaviel_05",
+  "character_name": "查维尔",
+  "title": "黄昏的低语",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "夕阳将天空染成一片温暖的金色，茶馆里的光线变得柔和而朦胧。查维尔没有像往常一样坐在窗边，而是站在后院的门口，看着水池中倒映的晚霞出神。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "查维尔",
+      "text": "他听到脚步声，没有回头。\n\n「你看。」他指了指水面，「晚霞倒映在水里，像不像鱼鳞的颜色？」\n\n水池中，金色的天光随着水波轻轻晃动，确实像一片片闪烁的鱼鳞。",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「真的很美。」",
+          "next_node": "appreciate_scene",
+          "affection_change": 5
+        },
+        {
+          "text": "「你总是在看这些，不会腻吗？」",
+          "next_node": "curious_habit",
+          "affection_change": 3
+        },
+        {
+          "text": "「天快黑了，还不进去吗？」",
+          "next_node": "concern_dark",
+          "affection_change": 4
+        }
+      ]
+    },
+    "appreciate_scene": {
+      "speaker": "查维尔",
+      "text": "他轻轻勾了勾嘴角。\n\n「嗯。」他应了一声，「美的东西，看多久都不会腻。」\n\n他蹲下身，伸手轻轻拨了拨水面。锦鲤们以为是喂食的时间到了，纷纷聚拢过来。\n\n「……你说，它们会觉得这池子太小了吗？」他忽然问，语气里带着一丝认真的困惑。",
+      "emotion": "sad",
+      "choices": [
+        {
+          "text": "「只要有人用心照顾，大小不重要。」",
+          "next_node": "reassure",
+          "affection_change": 6
+        },
+        {
+          "text": "「你是不是在想自己？」",
+          "next_node": "see_through",
+          "affection_change": 7
+        }
+      ]
+    },
+    "curious_habit": {
+      "speaker": "查维尔",
+      "text": "他沉默了几秒。\n\n「……不会腻。」他说得很轻，却异常笃定，「世界上好看的东西本来就不多，遇到一个就好好看着，不然错过了就没了。」\n\n他没有等你回答，转身走回了茶馆里。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "concern_dark": {
+      "speaker": "查维尔",
+      "text": "他抬头看了看天边最后一抹余晖，轻轻叹了口气。\n\n「嗯，是该进去了。」他站起身，拍了拍衣摆，「不过——黄昏的时间太短了，总让人觉得舍不得。」\n\n他回头看了你一眼。\n\n「你也会有这种感觉吗？」",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "reassure": {
+      "speaker": "查维尔",
+      "text": "他低头看着水中聚拢的锦鲤，沉默了好一会儿。\n\n「……也许你说得对。」他终于开口，声音很轻，「重要的是有没有人用心对待，而不是池子有多大。」\n\n他站起身，拍了拍手上的水珠。\n\n「谢谢你。」他忽然说，语气里带着一份难得的认真，「有时候我自己想不通的事情，被你这么一说，好像就没那么复杂了。」",
+      "emotion": "touched",
+      "next_node": "chapter_end"
+    },
+    "see_through": {
+      "speaker": "查维尔",
+      "text": "他猛地转过头看你，眼神里闪过一丝惊讶，随即又别开了视线。\n\n「……你有时候真的很敏锐。」他低声说，像是自言自语，「让人不知道该怎么接话。」\n\n他沉默了很久。\n\n「也许吧。」他最后说，「也许我是在想自己。」\n\n他蹲下身，看着水中的倒影。那倒影被晚霞染成了暖金色，随着水波轻轻晃动，看不真切。",
+      "emotion": "sad",
+      "next_node": "chapter_end"
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "天色终于完全暗了下来，茶馆里亮起了灯光。查维尔走回他的座位上，给自己续了一杯茶。你没有跟进去，而是站在门口，看着他的背影被暖黄的灯光勾勒出一道柔和的轮廓。你知道，这个人心里藏着很多没有说出口的话——也许有一天，他会愿意告诉你。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "script_id": "luoshulv_01",
+  "character_name": "洛疏律",
+  "title": "初入茶馆",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "你推开茶馆的木门，风铃发出一声清脆的响声。循着熟悉的方向看去，洛疏律正坐在窗边的老位置上，手边放着一杯冒着热气的茶，膝上摊着一本打开的笔记本。他听到脚步声，抬起头来。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "洛疏律",
+      "text": "「啊，你来了。」他微微一笑，合上笔记本，「今天想喝点什么？」",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「和往常一样，蜂蜜柚子茶。」",
+          "next_node": "order_usual",
+          "affection_change": 3
+        },
+        {
+          "text": "「你推荐什么？」",
+          "next_node": "recommend",
+          "affection_change": 5
+        },
+        {
+          "text": "「你笔记本里写了什么？」",
+          "next_node": "notebook_curious",
+          "affection_change": 0
+        }
+      ]
+    },
+    "order_usual": {
+      "speaker": "洛疏律",
+      "text": "他点了点头，起身去吧台。很快，一杯冒着热气的蜂蜜柚子茶被轻轻放到你面前。\n\n「给。」他坐回自己的位置，目光落在窗外，「你今天看起来精神不错。」",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「你也是啊，今天天气好。」",
+          "next_node": "chapter_end",
+          "affection_change": 3
+        },
+        {
+          "text": "「最近有点累，来你这儿放松一下。」",
+          "next_node": "chapter_end",
+          "affection_change": 5
+        }
+      ]
+    },
+    "recommend": {
+      "speaker": "洛疏律",
+      "text": "他偏了偏头，认真思考了一小会儿。\n\n「嗯……今天店里新进了一批茉莉柚茶，香味很清雅，要不要试试？」他轻声提议道，「不过如果你更喜欢甜一些的话，还是蜂蜜柚子茶稳妥。」",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「那就茉莉柚茶吧，听你的。」",
+          "next_node": "try_new",
+          "affection_change": 8
+        },
+        {
+          "text": "「还是蜂蜜柚子茶吧，喝习惯了。」",
+          "next_node": "chapter_end",
+          "affection_change": 3
+        }
+      ]
+    },
+    "try_new": {
+      "speaker": "洛疏律",
+      "text": "他眼中闪过一丝笑意，转身去吧台准备。很快，一杯散发着清幽茉莉香气的柚茶被端到你面前。茶汤清澈透亮，几朵干茉莉在杯中缓缓绽放。\n\n「尝尝看。」他说着在你对面坐下，目光中带着些许期待。",
+      "emotion": "happy",
+      "next_node": "chapter_end"
+    },
+    "notebook_curious": {
+      "speaker": "洛疏律",
+      "text": "他的脸色微微一变，几乎是下意识地把笔记本合上护在胸前。\n\n「这个……不太方便。」他说得有些勉强，眼神闪躲了一下，「只是一些私人笔记而已。」\n\n气氛一时有些尴尬。他低下头喝了一口茶，没有再说话的意思。",
+      "emotion": "anxious",
+      "choices": [
+        {
+          "text": "「抱歉，是我冒失了。」",
+          "next_node": "chapter_end",
+          "affection_change": 2
+        },
+        {
+          "text": "「好吧，那我不问了。」",
+          "next_node": "chapter_end",
+          "affection_change": 1
+        }
+      ]
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "午后的阳光透过窗棂洒进来，茶香在空气中缓缓弥漫。洛疏律低头抿了一口茶，嘴角带着一丝若有若无的弧度。你知道，这只是你们故事的开始。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "script_id": "xaviel_03",
+  "character_name": "查维尔",
+  "title": "安静的午后",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "午后下了一场短暂的阵雨，空气里弥漫着泥土和青草的气息。茶馆里客人不多，查维尔依然坐在那个靠窗的位置上，但这次他没有看窗外，而是在低头摆弄一片不知道从哪里捡来的落叶。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "查维尔",
+      "text": "他听到脚步声，抬头看了你一眼，然后若无其事地把落叶放在了桌角。\n\n「雨刚停。」他说，像是在对你解释什么，「空气很好。」",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「你刚才在想什么？」",
+          "next_node": "ask_thoughts",
+          "affection_change": 4
+        },
+        {
+          "text": "「是啊，雨后的空气最舒服了。」",
+          "next_node": "agree_weather",
+          "affection_change": 3
+        },
+        {
+          "text": "「你捡那片叶子做什么？」",
+          "next_node": "curious_leaf",
+          "affection_change": 2
+        }
+      ]
+    },
+    "ask_thoughts": {
+      "speaker": "查维尔",
+      "text": "他沉默了几秒。\n\n「……在想一些很久以前的事情。」他的声音很轻，「有时候下雨天会让人想起过去的事情，明明已经过了那么久了，却好像昨天才发生一样。」\n\n他转回头看着窗外，眼神有些迷离。\n\n「……人真是奇怪的生物，对吧？」",
+      "emotion": "sad",
+      "choices": [
+        {
+          "text": "「如果你愿意说，我听着。」",
+          "next_node": "offer_listen",
+          "affection_change": 7
+        },
+        {
+          "text": "「过去的事情就让它过去吧。」",
+          "next_node": "move_on",
+          "affection_change": 1
+        }
+      ]
+    },
+    "agree_weather": {
+      "speaker": "查维尔",
+      "text": "他轻轻点了点头。\n\n「嗯。」他应了一声，然后指了指窗外，「你看那边的树叶，被雨洗过之后颜色特别好看。」\n\n你顺着他指的方向看去——雨水洗过的叶片在阳光下泛着鲜亮的绿色，确实比平时更加动人。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "curious_leaf": {
+      "speaker": "查维尔",
+      "text": "他低头看了看桌上的落叶，用手指轻轻拨弄了一下。\n\n「没什么。」他说，「就是觉得它的形状挺好看的，像一条小鱼。」\n\n说完他似乎觉得这个理由有些幼稚，别过头去不再看你。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "offer_listen": {
+      "speaker": "查维尔",
+      "text": "他转回头，有些意外地看着你。那种眼神像是在审视一件他不确定该怎么面对的事情。\n\n「……你真的想听？」他问，语气里带着一丝犹疑，「都是一些无关紧要的事罢了。」\n\n他低下头，指尖轻轻敲着桌面。\n\n「不过……谢谢。」他的声音几乎被窗外的风声淹没，「谢谢你说愿意听。」",
+      "emotion": "touched",
+      "next_node": "chapter_end"
+    },
+    "move_on": {
+      "speaker": "查维尔",
+      "text": "他看了你一眼，嘴角微微动了动。\n\n「嗯，也许你说得对。」他轻声说，「不过有些事，不是说过去就能过去的。」\n\n他没有再说下去，端起茶杯喝了一口，目光重新落回窗外。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "雨后的阳光透过玻璃窗洒进来，在桌面上投下柔和的光影。你注意到，那片落叶被查维尔悄悄地收进了口袋里。他没有解释为什么，你也没有问。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

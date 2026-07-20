@@ -58,6 +58,11 @@ class ForwardService:
         self._bot_name = bot_name
         self._bot_user_id = bot_user_id
 
+    @property
+    def bot_name(self) -> str:
+        """获取机器人显示名称。"""
+        return self._bot_name
+
     # ==================== 节点构建 ====================
 
     @staticmethod
@@ -130,6 +135,11 @@ class ForwardService:
         根据节点类型（旁白/角色、有选项/无选项）生成不同的展示格式。
         启用合并转发时，每条消息包装为单个转发节点即时发送。
 
+        Tutorial 模式下增强渲染：
+        - 旁白头部显示「📖 新手引导」
+        - 选项区域增加视觉分隔和快捷提示
+        - 结尾提示使用更柔和的引导语
+
         Args:
             stream_id: 消息流 ID。
             result: renderer 返回的对话节点数据。
@@ -149,11 +159,18 @@ class ForwardService:
 
         choices = result.get("choices")
         if choices:
-            lines.append("\n请选择：")
+            if is_tutorial:
+                lines.append("\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈")
+            else:
+                lines.append("\n请选择：")
             for c in choices:
                 lines.append(f"  /dsv choose {c['index']} — {c['text']}")
         else:
-            lines.append("\n—— 输入 /dsv next 继续 ——")
+            if is_tutorial:
+                lines.append("\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈")
+                lines.append("输入 /dsv next 继续，或 /dsv skip tutorial 跳过引导")
+            else:
+                lines.append("\n—— 输入 /dsv next 继续 ——")
 
         content = "\n".join(lines)
         sender = speaker if speaker != "narrator" else bot_name

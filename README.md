@@ -12,6 +12,9 @@
 - [系统机制](#系统机制)
   - [新手引导系统](#新手引导系统)
   - [好感度系统](#好感度系统)
+  - [分段式剧情对话](#分段式剧情对话系统)
+  - [自由聊天模式](#自由聊天模式)
+  - [Planner 阻止机制](#planner-阻止机制)
   - [情绪倾诉系统](#情绪倾诉系统)
   - [记事本与线索系统](#记事本与线索系统)
   - [存档系统](#存档系统)
@@ -62,23 +65,20 @@
 
 ### 1. 放置插件
 
-将 `plugins/visual_novel/` 目录复制到 MaiBot 项目的 `plugins/` 目录下。
+将 `plugins/daosu_galgame/` 目录复制到 MaiBot 项目的 `plugins/` 目录下。
 
 ### 2. 编辑配置
 
-编辑 `plugins/visual_novel/config.toml`：
+编辑 `plugins/daosu_galgame/config.toml`：
 
 ```toml
 [plugin]
 enabled = true
-config_version = "1.0.1"
-
-[game]
-default_gifts = ["花束", "手工饼干", "音乐盒", "巧克力"]
+config_version = "1.1.0"
 
 [data]
-data_dir = "plugins/visual_novel/data"       # 角色数据路径
-save_dir = "plugins/visual_novel/data/saves" # 存档路径
+data_dir = "plugins/daosu_galgame/data"       # 角色数据路径
+save_dir = "plugins/daosu_galgame/data/saves" # 存档路径
 
 [tutorial]
 enabled = true                                # 首次进入时自动引导
@@ -94,11 +94,10 @@ max_slots = 20                                # 存档槽位数量
 
 [forward]
 enabled = true                                # 合并转发开关
-auto_flush = true
-display_title = "悼溯茶馆 · 消息记录"
 bot_name = "悼溯茶馆"
-napcat_url = "http://127.0.0.1:3000"          # NapCat HTTP API 地址
-request_timeout = 10
+
+[chat]
+default_model = "replyer"                     # 自由聊天默认 LLM 模型
 ```
 
 ### 3. 重启 Bot
@@ -114,6 +113,10 @@ request_timeout = 10
 | `/dsv next` | 推进当前对话到下一节点 |
 | `/dsv choose <编号>` | 在对话分支中选择选项 |
 | `/dsv explore <角色名>` | 与指定角色开始日常对话探索 |
+| `/dsv plot <角色名>` | 与角色进行分段式剧情对话 |
+| `/dsv plot_exit` | 退出剧情对话模式 |
+| `/dsv chat <角色名>` | 与角色进行自由聊天（LLM 驱动） |
+| `/dsv chat_exit` | 退出自由聊天模式 |
 | `/dsv gift <角色名> <礼物名>` | 向角色赠送礼物 |
 | `/dsv invite <角色名> <活动名>` | 邀请角色参加活动 |
 | `/dsv notebook [角色名]` | 查看记事本（可选指定角色筛选线索） |
@@ -164,6 +167,41 @@ request_timeout = 10
 
 好感度达到特定阈值时自动触发对应角色事件。
 
+### 分段式剧情对话系统
+
+通过 `/dsv plot <角色名>` 命令进入，加载角色专属的预编 JSON 剧情脚本。
+每段剧情由节点图构成，包含好、中、坏三种结局，用户通过选项分支推进剧情。
+选项会实时影响角色好感度，FSM 切换到 `SAID_SCRIPT` 状态。
+配套 `/dsv plot_exit` 随时退出。
+
+剧情脚本存储于 `data/plot/` 目录下，每位角色拥有独立子目录：
+- `data/plot/luoshulv/` — 洛疏律（5 章）
+- `data/plot/xaviel/` — 查维尔（5 章）
+
+每章独立 JSON 文件，系统自动扫描、验证并加载。目前已为每位角色配备了 5 章专属剧情线。
+
+### 自由聊天模式
+
+通过 `/dsv chat <角色名>` 命令进入，与角色进行 LLM 驱动的实时自由对话。
+角色 prompt 从 `data/characters/` JSON 自动加载，构建为 LLM system prompt。
+对话历史维护最近 20 条消息，支持上下文连续的对话体验。
+
+- **模型配置**：通过 `config.toml [chat].default_model` 指定，默认 `"replyer"`
+- **好感度联动**：LLM prompt 中注入当前好感度等级，影响角色回复风格
+- **退出方式**：通过 `/dsv chat_exit` 命令退出
+- FSM 切换到 `CHAT` 状态，退出后回到 `EXPLORATION`
+
+### Planner 阻止机制
+
+为防止自由聊天模式下的消息被 MaiBot 的 Planner/LLM 处理链再次处理，
+系统部署了三层防御：
+
+1. **消息拦截**（`chat.receive.before_process`）：CHAT 状态下非命令消息 →
+   返回 `{"action": "abort"}` 彻底阻止消息进入处理链，异步调用 LLM 生成回复
+2. **命令拦截**（`chat.command.after_execute`）：所有 `/dsv` 命令 →
+   设置 `intercept_message_level = 1` 阻止后续 Planner 处理
+3. **异步非阻塞**：LLM 调用通过 `asyncio.ensure_future` 异步执行，不阻塞主流程
+
 ### 情绪倾诉系统
 
 当对话检测到角色处于倾诉烦恼状态（`emotion` 为 `sad` / `anxious` / `frustrated` / `venting`）时，系统自动在选项中增加 **「静静听着」** 选项。选择该选项会触发特定的好感度调整（默认 +5），并推动角色情感表达。
@@ -185,20 +223,19 @@ request_timeout = 10
 
 ### 合并转发消息
 
-支持通过 NapCat HTTP API 将多段对话/引导内容合并为一条 QQ 转发消息发送。
+支持通过 Host 的 `send.forward` 能力将多段对话/引导内容合并为一条转发消息发送。
 
-- **收集模式**：对话/引导流程中，各段文本按序缓冲到消息收集器
-- **自动合并**：流程结束时统一调用 NapCat `send_group_forward_msg` 发送
-- **降级机制**：NapCat 不可用时自动降级为逐条发送，不影响体验
-- **配置控制**：通过 `[forward]` 配置段开关，可配置 NapCat 地址和超时时间
+- **单条转发**：每条对话/节点即时包装为单个转发节点发送，不延迟缓冲
+- **降级机制**：转发不可用时自动降级为直接文本发送，不影响体验
+- **配置控制**：通过 `[forward]` 配置段开关，可配置机器人显示名称
 
 ## 架构设计
 
 ```
-plugins/visual_novel/
+plugins/daosu_galgame/
 ├── core/                  # 核心基础设施
 │   ├── __init__.py
-│   ├── fsm.py             # 有限状态机（11 种状态，预定义转换规则）
+│   ├── fsm.py             # 有限状态机（13 种状态，预定义转换规则）
 │   └── exceptions.py      # 自定义异常类型体系
 ├── modules/               # 功能模块
 │   ├── __init__.py
@@ -207,11 +244,14 @@ plugins/visual_novel/
 │   ├── affection.py       # 好感度系统：7 级好感度体系
 │   ├── notebook.py        # 记事本与线索系统
 │   ├── interaction.py     # 互动行为系统：礼物赠送与邀约活动
+│   ├── plot.py            # 分段式剧情对话引擎（/dsv plot，多章节支持）
+│   ├── say_chat.py        # 自由聊天引擎（/dsv chat，LLM 驱动）
 │   ├── save_manager.py    # 存档管理：可配置槽位 JSON 持久化
-│   └── forward.py         # 合并转发消息收集器
+│   └── forward.py         # 合并转发消息服务（基于 Host send.forward）
 ├── data/                  # 数据文件
 │   ├── characters/        # 角色 prompt JSON（支持注释）
-│   └── events/            # 对话脚本 JSON（支持注释）
+│   ├── events/            # 对话脚本 JSON（支持注释）
+│   └── plot/              # 分段式剧情对话 JSON（/dsv plot 使用）
 ├── config.py              # 配置模型定义（供 plugin.py 与后台 UI 使用）
 ├── renderer.py            # 模块加载器与协调器
 ├── plugin.py              # 插件入口（精简协调层）
@@ -239,20 +279,22 @@ plugins/visual_novel/
          → modules/*.py (业务逻辑执行)
          → renderer.py (反馈整合)
          → plugin.py (消息发送 / 收集器缓冲)
-         → NapCat API (合并转发) 或 ctx.send.text (直发)
+         → Host send.forward (合并转发) 或 ctx.send.text (直发)
 ```
 
 ### 有限状态机
 
-游戏流程由 11 种状态驱动，所有状态转换须符合预定义的合法规则：
+游戏流程由 13 种状态驱动，所有状态转换须符合预定义的合法规则：
 
 ```
 IDLE → {MAIN_MENU, TUTORIAL}
 MAIN_MENU → {EXPLORATION, SAVE_MENU, NOTEBOOK, TUTORIAL}
 TUTORIAL → {DIALOGUE, AWAITING_CHOICE, MAIN_MENU}
-EXPLORATION → {DIALOGUE, EVENT, GIFT_MENU, INVITE_MENU, NOTEBOOK, SAVE_MENU}
+EXPLORATION → {DIALOGUE, EVENT, GIFT_MENU, INVITE_MENU, NOTEBOOK, SAVE_MENU, CHAT}
 DIALOGUE → {EXPLORATION, EVENT, AWAITING_CHOICE, SAVE_MENU}
-AWAITING_CHOICE → {DIALOGUE, EVENT, EXPLORATION}
+AWAITING_CHOICE → {DIALOGUE, EVENT, EXPLORATION, SAID_SCRIPT}
+SAID_SCRIPT → {AWAITING_CHOICE, EXPLORATION}
+CHAT → {EXPLORATION, MAIN_MENU}
 ```
 
 ## 数据格式
@@ -319,6 +361,49 @@ AWAITING_CHOICE → {DIALOGUE, EVENT, EXPLORATION}
 }
 ```
 
+### 分段式剧情对话格式
+
+`data/plot/` 目录下每个 JSON 文件定义一个分段式剧情脚本，供 `/dsv plot` 命令使用。
+结构与事件脚本类似，但按角色归属，并支持三种结局（好/中/坏）：
+
+```json
+{
+  "script_id": "said_luoshulv_01",          // 脚本唯一标识
+  "character_name": "洛疏律",            // 关联的角色名
+  "title": "与洛疏律的茶馆午后",         // 剧情标题
+  "start_node": "node_01",               // 起始节点 ID
+  "nodes": {
+    "node_01": {
+      "text": "（你推开茶馆的木门...）",
+      "speaker": "洛疏律",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「和往常一样，蜂蜜柚子茶。」",
+          "next_node": "node_02",
+          "affection_change": 3
+        },
+        {
+          "text": "「你推荐什么？」",
+          "next_node": "node_03",
+          "affection_change": 5
+        }
+      ]
+    },
+    "node_end_good": {                   // 好结局节点（无 choices 且无 next_node）
+      "text": "今天和你聊天很开心。",
+      "speaker": "洛疏律",
+      "emotion": "happy"
+    }
+  }
+}
+```
+
+分段式剧情脚本与事件脚本结构相似，但有以下区别：
+- 选项不含 `option_id` 字段（好感度直接通过 `affection_change` 控制）
+- 终点节点命名约定为 `node_end_good` / `node_end_neutral` / `node_end_bad`，分别对应好/中/坏三种结局
+- 顶层通过 `character_name` 字段关联角色，用于 `/dsv plot <角色名>` 匹配
+
 ## 配置文件
 
 所有配置模型集中定义于 `config.py`，可通过后台 UI 渲染配置面板。实际运行值由 `config.toml` 提供。共分 7 个配置段：
@@ -326,12 +411,12 @@ AWAITING_CHOICE → {DIALOGUE, EVENT, EXPLORATION}
 | 配置段 | 功能 |
 |--------|------|
 | `[plugin]` | 插件启用开关、配置版本 |
-| `[game]` | 初始礼物列表 |
 | `[data]` | 数据目录、存档目录路径 |
 | `[tutorial]` | 新手引导开关、脚本 ID |
 | `[affection]` | 好感度初始值、上下限 |
 | `[save]` | 存档槽位数 |
-| `[forward]` | 合并转发开关、NapCat 地址 |
+| `[forward]` | 合并转发开关、机器人名称 |
+| `[chat]` | 自由聊天默认 LLM 模型 |
 
 ## 自定义配置
 
@@ -400,7 +485,16 @@ A: 存档存储在 `data/saves/` 目录下，文件名为 `save_01.json` ~ `save
 A: 可以。脚本 JSON 和角色 JSON 均支持 `//` 行注释和 `/* */` 块注释，解析时会自动过滤。
 
 **Q: 总是发多条消息，能不能合并到一起发？**
-A: 可以。`config.toml` 中 `[forward].enabled = true` 即可启用合并转发。对话/引导流程中的多段文本会自动合成为一条 QQ 转发消息。需配置 `napcat_url` 指向你的 NapCat HTTP 服务地址。
+A: 可以。`config.toml` 中 `[forward].enabled = true` 即可启用合并转发。对话/引导流程中的多段文本会自动合成为一条转发消息发送。
+
+**Q: `/dsv plot` 和 `/dsv chat` 有什么区别？**
+A: `/dsv plot` 使用预编的 JSON 剧情脚本，提供固定剧情分支和好感度反馈，体验类似传统视觉小说。`/dsv chat` 由 LLM 实时驱动，可以自由对话没有固定剧本，模型由 `config.toml [chat].default_model` 配置。
+
+**Q: 自由聊天模式的回复太慢了怎么办？**
+A: 可以在 `config.toml` 的 `[chat]` 段中换用响应更快的 LLM 模型。默认模型为 `"replyer"`（MaiBot 内置回复任务），也可指定其他模型。
+
+**Q: 如何修改自由聊天使用的 LLM 模型？**
+A: 编辑 `config.toml`，在 `[chat]` 段中设置 `default_model = "模型名称"`。模型仅通过配置控制，用户命令中无法指定。
 
 ## 许可
 

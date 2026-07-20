@@ -1,0 +1,60 @@
+{
+  "script_id": "xaviel_01",
+  "character_name": "查维尔",
+  "title": "窗边的少年",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "午后时分，茶馆靠窗的位置上坐着一个看上去有些特别的人。面前的茶杯冒着淡淡的热气，旁边还搁着一碟没动过的绿豆糕。他正望着窗外发呆，目光像在追随什么流动的东西。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "查维尔",
+      "text": "他察觉到你的目光，缓缓转过头来。\n\n「……要坐就坐，别站着挡光。」\n\n他的语气算不上冷淡，但也谈不上热情，只是陈述了一个事实。",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「你在看什么呢？」",
+          "next_node": "ask_looking",
+          "affection_change": 3
+        },
+        {
+          "text": "「听说你后院养了鱼？」",
+          "next_node": "ask_fish",
+          "affection_change": 5
+        },
+        {
+          "text": "「（默默在隔壁桌坐下）」",
+          "next_node": "sit_quietly",
+          "affection_change": 1
+        }
+      ]
+    },
+    "ask_looking": {
+      "speaker": "查维尔",
+      "text": "他重新将目光移向窗外。\n\n「……没什么。就是在看云。」他顿了顿，「你不觉得它们游来游去的样子，很像鱼吗？」\n\n他说这话的时候，语气里带着一丝认真的困惑，仿佛真的在思考这个比喻的准确性。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "ask_fish": {
+      "speaker": "查维尔",
+      "text": "他的眼神明显亮了一下，随即又故作淡然。\n\n「嗯。养在后院水池里。蓝鳞丝绸鱼，很好看。」他顿了顿，又补了一句，「……不过它们怕生。」\n\n虽然语气平淡，但你注意到他说话时嘴角的弧度微微上扬了一点。",
+      "emotion": "happy",
+      "next_node": "chapter_end"
+    },
+    "sit_quietly": {
+      "speaker": "narrator",
+      "text": "你在隔壁桌坐下，点了一壶茶。那个人似乎没太在意你，但从你坐下后，他搁在碟子边的绿豆糕往你的方向无声地挪了挪。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "你端起茶杯，浅浅地尝了一口。窗边的人又恢复了最初的样子，安静地看着窗外，仿佛刚才那段简短的对话从未发生过。但你隐隐觉得，这个人不像表面上看起来那么难以接近。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

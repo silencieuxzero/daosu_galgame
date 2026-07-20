@@ -1,0 +1,106 @@
+{
+  "script_id": "luoshulv_05",
+  "character_name": "洛疏律",
+  "title": "暮色茶香",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "不知不觉间，窗外已被暮色笼罩。茶馆里点起了暖黄的灯光，客人陆续离开，只剩下你和洛疏律两个人。他收拾好桌面，给自己续了一杯茶，然后在你对面坐了下来。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "洛疏律",
+      "text": "「今天没什么人了。」他轻声说，语气比白天放松了许多，「这个时候的茶馆是最舒服的——没有嘈杂，只有自己和一杯茶。」\n\n他端起茶杯，轻轻吹了吹热气，目光落在你身上。",
+      "emotion": "warm",
+      "choices": [
+        {
+          "text": "「那你是不是每天都期待这个时候？」",
+          "next_node": "evening_talk",
+          "affection_change": 4
+        },
+        {
+          "text": "「你好像很喜欢安静。」",
+          "next_node": "quiet_nature",
+          "affection_change": 3
+        },
+        {
+          "text": "「天色不早了，我该走了。」",
+          "next_node": "leave_early",
+          "affection_change": -1
+        }
+      ]
+    },
+    "evening_talk": {
+      "speaker": "洛疏律",
+      "text": "他微微笑了笑，没有直接回答。\n\n「与其说是期待，不如说是习惯了吧。」他低头看着杯中琥珀色的茶汤，「习惯了一个人的时候想一些事情，习惯了这个时间的安静。人一旦习惯了什么，就很难改变了。」",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「那就试着做些改变？」",
+          "next_node": "suggest_change",
+          "affection_change": 6
+        },
+        {
+          "text": "「习惯也没什么不好。」",
+          "next_node": "accept_habit",
+          "affection_change": 3
+        }
+      ]
+    },
+    "quiet_nature": {
+      "speaker": "洛疏律",
+      "text": "他偏了偏头，似乎在思考你的话。\n\n「嗯……可能是吧。」他轻轻说道，「不过也不是讨厌热闹。只是觉得，安静的时候，人更容易听见自己心里的声音。」\n\n他看了你一眼。\n\n「……当然，有些声音也不是非要听清楚不可。」",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "leave_early": {
+      "speaker": "洛疏律",
+      "text": "他眼中闪过一丝不易察觉的失落，但很快恢复了平静。\n\n「嗯，路上小心。」他站起身，像是想说什么，却又忍住了，「下次再来吧。」",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "suggest_change": {
+      "speaker": "洛疏律",
+      "text": "他抬起头看你，目光里有种说不清的情绪。\n\n「改变啊……」他低声重复了一遍这个词，「说起来容易，做起来却很难。尤其是当你连自己想变成什么样都不确定的时候。」\n\n他沉默了一会儿，忽然开口。\n\n「不过——如果只是做一些小的改变，比如尝试一种没喝过的茶，或者去一个没去过的地方……也许也没那么难？」\n\n他的语气里带着一丝不确定，但也有一丝期待。",
+      "emotion": "warm",
+      "choices": [
+        {
+          "text": "「那下次我带你出去走走吧。」",
+          "next_node": "invite_out",
+          "affection_change": 8
+        },
+        {
+          "text": "「先从换一种茶开始怎么样？」",
+          "next_node": "try_new_tea",
+          "affection_change": 5
+        }
+      ]
+    },
+    "accept_habit": {
+      "speaker": "洛疏律",
+      "text": "他轻轻点了点头。\n\n「嗯……你这么说，我就放心了。」他端起茶杯，「有时候我担心自己太沉闷了，会让别人觉得无聊。」\n\n他顿了顿，声音变得更轻。\n\n「……虽然你好像从来没这么觉得。」",
+      "emotion": "warm",
+      "next_node": "chapter_end"
+    },
+    "invite_out": {
+      "speaker": "洛疏律",
+      "text": "他愣了一下，似乎没想到你会这么说。\n\n「……带我出去？」他重复了一遍，语气里带着一丝惊讶和不确定，「去哪里？」\n\n他的手指轻轻敲着茶杯，像是在认真考虑这个提议。过了一会儿，他低声说：\n\n「……也不是不行。」",
+      "emotion": "happy",
+      "next_node": "chapter_end"
+    },
+    "try_new_tea": {
+      "speaker": "洛疏律",
+      "text": "他低头看了看杯中的茶，若有所思。\n\n「换一种茶啊……」他想了想，「其实店里最近进了一批正山小种，老板说味道很醇厚。我还没试过……要不——下次你来的时候，我们一起尝尝？」",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "窗外的天色已经完全暗了下来，茶馆里的灯光显得格外温暖。洛疏律坐在你对面，神情平和。从初识时的拘谨，到雨天的倾诉，再到午后的深谈——一路走来，你们之间的距离已经和最初完全不同。你知道，这座茶馆和这个人之间，还有更多的故事在等着你去发现。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

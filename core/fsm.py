@@ -25,7 +25,7 @@ class GameState(Enum):
     IDLE = auto()          # 空闲/未开始：插件刚加载，尚未进入游戏
     MAIN_MENU = auto()     # 主菜单：选择角色、读取存档等
     TUTORIAL = auto()      # 新手引导：首次进入游戏时的交互式教程
-    EXPLORATION = auto()   # 自由探索/日常对话：与角色进行日常互动
+    EXPLORATION = auto()   # 自由探索（向后兼容保留，新流程使用 PLOT_SCRIPT）
     DIALOGUE = auto()      # 剧情对话：正在进行固定脚本的对话流程
     EVENT = auto()         # 特殊事件：触发特殊的剧情事件
     GIFT_MENU = auto()     # 礼物赠送界面：选择并赠送礼物
@@ -33,7 +33,8 @@ class GameState(Enum):
     NOTEBOOK = auto()      # 记事本：查看已收集的角色线索
     SAVE_MENU = auto()     # 存档/读档：管理保存进度
     AWAITING_CHOICE = auto()  # 等待玩家选择：对话中出现分支选项
-    SAID_SCRIPT = auto()     # 分段式剧情对话（/dsv said 命令触发的交互模式）
+    PLOT_SCRIPT = auto()     # 游戏模式（统一剧情+探索）：沉浸式叙事，支持送礼/邀约/记事本/聊天等探索互动
+    CHAT = auto()            # 自由聊天模式（/dsv chat 命令触发，通过 LLM 实时对话）
 
 
 # 合法的状态转换映射表
@@ -47,6 +48,7 @@ _ALLOWED_TRANSITIONS: dict[GameState, set[GameState]] = {
         GameState.NOTEBOOK,
         GameState.IDLE,
         GameState.TUTORIAL,
+        GameState.PLOT_SCRIPT,
     },
     GameState.TUTORIAL: {
         GameState.DIALOGUE,
@@ -61,34 +63,51 @@ _ALLOWED_TRANSITIONS: dict[GameState, set[GameState]] = {
         GameState.NOTEBOOK,
         GameState.SAVE_MENU,
         GameState.MAIN_MENU,
+        GameState.CHAT,
+        GameState.PLOT_SCRIPT,
     },
     GameState.DIALOGUE: {
         GameState.EXPLORATION,
         GameState.EVENT,
         GameState.AWAITING_CHOICE,
         GameState.SAVE_MENU,
+        GameState.PLOT_SCRIPT,
     },
     GameState.EVENT: {
         GameState.DIALOGUE,
         GameState.EXPLORATION,
         GameState.AWAITING_CHOICE,
+        GameState.PLOT_SCRIPT,
     },
-    GameState.GIFT_MENU: {GameState.EXPLORATION, GameState.DIALOGUE},
-    GameState.INVITE_MENU: {GameState.EXPLORATION, GameState.DIALOGUE},
-    GameState.NOTEBOOK: {GameState.EXPLORATION, GameState.MAIN_MENU},
+    GameState.GIFT_MENU: {GameState.EXPLORATION, GameState.DIALOGUE, GameState.PLOT_SCRIPT},
+    GameState.INVITE_MENU: {GameState.EXPLORATION, GameState.DIALOGUE, GameState.PLOT_SCRIPT},
+    GameState.NOTEBOOK: {GameState.EXPLORATION, GameState.MAIN_MENU, GameState.PLOT_SCRIPT},
     GameState.SAVE_MENU: {
         GameState.EXPLORATION,
         GameState.MAIN_MENU,
         GameState.DIALOGUE,
+        GameState.PLOT_SCRIPT,
     },
     GameState.AWAITING_CHOICE: {
         GameState.DIALOGUE, GameState.EVENT, GameState.EXPLORATION,
-        GameState.MAIN_MENU, GameState.SAID_SCRIPT,
+        GameState.MAIN_MENU, GameState.PLOT_SCRIPT,
     },
-    GameState.SAID_SCRIPT: {
+    GameState.PLOT_SCRIPT: {
         GameState.AWAITING_CHOICE,
         GameState.EXPLORATION,
         GameState.MAIN_MENU,
+        GameState.GIFT_MENU,
+        GameState.INVITE_MENU,
+        GameState.NOTEBOOK,
+        GameState.SAVE_MENU,
+        GameState.CHAT,
+        GameState.DIALOGUE,
+        GameState.EVENT,
+    },
+    GameState.CHAT: {
+        GameState.EXPLORATION,
+        GameState.MAIN_MENU,
+        GameState.PLOT_SCRIPT,
     },
 }
 

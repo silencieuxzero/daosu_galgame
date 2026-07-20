@@ -1,0 +1,106 @@
+{
+  "script_id": "luoshulv_03",
+  "character_name": "洛疏律",
+  "title": "雨天的访客",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "正如上次离开时预感的那样，这天果然下起了雨。窗外的绵绵细雨顺着玻璃滑落，在窗台上溅起细小的水花。茶馆里比往常安静了许多，只有沸水的咕噜声和雨声交织在一起。洛疏律坐在窗边，手里没有拿笔，只是静静地看着窗外。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "洛疏律",
+      "text": "他听到脚步声，转过头来。看到是你，他的神情放松了一些。\n\n「下雨天你还来了啊。」他的声音比平时轻了一些，「坐吧，别站在门口。」",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「雨天和热茶最配了，怎么能不来。」",
+          "next_node": "rainy_mood",
+          "affection_change": 5
+        },
+        {
+          "text": "「你看起来有心事？」",
+          "next_node": "notice_mood",
+          "affection_change": 6
+        },
+        {
+          "text": "「正好路过，就进来避避雨。」",
+          "next_node": "casual_visit",
+          "affection_change": 1
+        }
+      ]
+    },
+    "rainy_mood": {
+      "speaker": "洛疏律",
+      "text": "他听了你的话，嘴角微微扬起一个弧度。\n\n「嗯，是啊。」他转回头看向窗外，「下雨天的茶馆总是特别安静……我很喜欢这样的氛围。雨声好像能把所有嘈杂都带走，只剩下最纯粹的声音。」\n\n他顿了顿，似乎在寻找合适的词。\n\n「……让人觉得，什么都不用想也没关系。」",
+      "emotion": "warm",
+      "choices": [
+        {
+          "text": "「那我们就一起听雨吧。」",
+          "next_node": "quiet_company",
+          "affection_change": 7
+        },
+        {
+          "text": "「你真是个感性的人。」",
+          "next_node": "tease_gently",
+          "affection_change": 3
+        }
+      ]
+    },
+    "notice_mood": {
+      "speaker": "洛疏律",
+      "text": "他微微一怔，似乎没想到你会注意到他的情绪。他低下头，手指无意识地摩挲着茶杯边缘。\n\n「……也没什么大事。」他轻声说，「只是下雨天容易让人想起一些事情。好的，不好的，都有。」\n\n他端起茶杯喝了一口，目光有些飘远。",
+      "emotion": "sad",
+      "choices": [
+        {
+          "text": "「如果你愿意说的话，我听着。」",
+          "next_node": "listen_kindly",
+          "affection_change": 8
+        },
+        {
+          "text": "「那就想些开心的事吧。」",
+          "next_node": "distract_lightly",
+          "affection_change": 2
+        }
+      ]
+    },
+    "casual_visit": {
+      "speaker": "洛疏律",
+      "text": "他轻轻点了点头，没有再说什么，转头继续看着窗外的雨幕。过了一会儿，他像是想起了什么，起身去吧台端了一杯热茶放在你常坐的位置上。\n\n「喝点热的吧，淋了雨容易着凉。」他低声说了一句，又坐回了自己的位置。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "quiet_company": {
+      "speaker": "洛疏律",
+      "text": "他没有说话，只是轻轻点了点头。你们就这样安静地坐着，听着窗外的雨声，各自喝着杯中的茶。过了一会儿，他忽然开口。\n\n「谢谢你。」他的声音很轻，「有时候，有人陪着不说话，比说很多话更让人安心。」",
+      "emotion": "touched",
+      "next_node": "chapter_end"
+    },
+    "tease_gently": {
+      "speaker": "洛疏律",
+      "text": "他愣了一下，随即有些不好意思地别过头去。\n\n「……没有的事。」他低声嘟囔道，耳根却微微泛红，「只是——算了，你就当我在说胡话吧。」\n\n他端起茶杯，假装专注于喝茶，不再看你了。",
+      "emotion": "happy",
+      "next_node": "chapter_end"
+    },
+    "listen_kindly": {
+      "speaker": "洛疏律",
+      "text": "他沉默了很久，久到你几乎以为他不打算说话了。\n\n「其实……」他终于开口，声音很轻，「我以前有过一个很想去的地方。但因为一些原因，一直没有去成。」他低头看着茶杯中自己的倒影，「后来渐渐地，就连那个念头都淡了。」\n\n他抬起头，对你挤出一个笑容。\n\n「……只是下雨天偶尔会想起来而已。」",
+      "emotion": "sad",
+      "next_node": "chapter_end"
+    },
+    "distract_lightly": {
+      "speaker": "洛疏律",
+      "text": "他看了你一眼，嘴角微微动了动，像是想说什么又忍住了。\n\n「嗯。」他最终只是应了一声，「你说得对。」\n\n他重新端起茶杯，目光重新落在窗外的雨幕上。虽然他没有再说下去，但气氛似乎比刚才轻松了一些。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "雨渐渐小了，窗外的天空露出一角淡淡的蓝色。洛疏律仍然看着窗外，但他的神情比刚才平静了许多。你意识到，在这个雨天里，你们之间的距离似乎又近了一点。临走时，他难得地轻声说了一句：\n\n「下次天气好的时候……再过来坐坐吧。」",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

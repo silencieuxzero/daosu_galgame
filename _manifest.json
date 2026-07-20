@@ -27,7 +27,8 @@
   "capabilities": [
     "send.text",
     "send.forward",
-    "config.get"
+    "config.get",
+    "llm.generate"
   ],
   "i18n": {
     "default_locale": "zh-CN",

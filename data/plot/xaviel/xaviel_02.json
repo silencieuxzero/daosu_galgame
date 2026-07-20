@@ -1,0 +1,60 @@
+{
+  "script_id": "xaviel_02",
+  "character_name": "查维尔",
+  "title": "茶与鱼",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "今天的茶馆比往常热闹一些，但靠窗的那个位置依然空着——仿佛在等你，又仿佛它一直都空着。查维尔已经坐在那里了，桌上依然是一壶茉莉花茶和一碟绿豆糕。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "查维尔",
+      "text": "他见你走过来，抬手给你倒了一杯茶。\n\n「来得正好。」他说，「这壶刚泡上，火候刚好。」\n\n他把茶杯推到你面前，茉莉花的清香随着热气飘散开来。",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「谢谢，你总是泡茉莉花茶吗？」",
+          "next_node": "tea_preference",
+          "affection_change": 3
+        },
+        {
+          "text": "「今天带我去看看你的鱼吧。」",
+          "next_node": "show_fish",
+          "affection_change": 6
+        },
+        {
+          "text": "「你每天就喝茶吃绿豆糕，不腻吗？」",
+          "next_node": "tease_gently",
+          "affection_change": -2
+        }
+      ]
+    },
+    "tea_preference": {
+      "speaker": "查维尔",
+      "text": "他低头看了看杯中的茶。\n\n「也不是总是。」他淡淡地说，「偶尔也会换换口味。不过茉莉花茶比较清淡，喝不腻。」\n\n他端起杯子闻了闻，神情里带着一丝满足。\n\n「……而且香味好闻。」",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "show_fish": {
+      "speaker": "查维尔",
+      "text": "他的眼睛立刻亮了起来，放下手中的绿豆糕。\n\n「走吧。」\n\n他起身往后院走去，步伐比平时轻快了不少。水池被清理得一尘不染，几尾蓝鳞丝绸鱼在水中悠然游弋。\n\n「你看那条红色的，最活泼的就是它。」他蹲在池边，手指轻轻划过水面，几条鱼立刻围了过来，「……它们都认得我了。」\n\n他的语气中带着不加掩饰的自豪——这大概是你看过他最真诚的表情。",
+      "emotion": "happy",
+      "next_node": "chapter_end"
+    },
+    "tease_gently": {
+      "speaker": "查维尔",
+      "text": "他看了你一眼，没有立刻接话。\n\n「……习惯了。」他最终只是简单地回答道，「不是每个人都喜欢变化。」\n\n他说完拿起一块绿豆糕咬了一口，目光重新移向窗外，似乎不想再继续这个话题了。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "查维尔回到座位上时，顺手把你杯中的茶续满了。他没有多说什么，但你知道——对于这个话不多的人来说，愿意主动和你分享他心爱的鱼，已经是一种难得的信任了。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

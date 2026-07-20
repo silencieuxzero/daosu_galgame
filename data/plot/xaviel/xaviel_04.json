@@ -1,0 +1,83 @@
+{
+  "script_id": "xaviel_04",
+  "character_name": "查维尔",
+  "title": "分享的味道",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "你今天来得比平时早了一些，查维尔似乎还没完全进入状态——他面前的绿豆糕还没动过，茶也刚泡上不久。他看到你，微微点了点头。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "查维尔",
+      "text": "「你今天来得很早。」他说，语气里带着一丝意外，但不是不欢迎，「要不要尝尝今天的绿豆糕？老板新进的，比我平时吃的那种细腻很多。」\n\n他把碟子往你的方向推了推。",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「好啊，那我就不客气了。」",
+          "next_node": "try_cake",
+          "affection_change": 5
+        },
+        {
+          "text": "「你推荐的东西，一定要尝尝。」",
+          "next_node": "trust_taste",
+          "affection_change": 7
+        },
+        {
+          "text": "「我不太吃甜的东西。」",
+          "next_node": "decline_cake",
+          "affection_change": -2
+        }
+      ]
+    },
+    "try_cake": {
+      "speaker": "查维尔",
+      "text": "他眼中闪过一丝满意，看着你拿起一块绿豆糕。\n\n「怎么样？」他问，语气里带着一丝期待——尽管他努力表现得不太在意。",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「真的很好吃！口感很细腻。」",
+          "next_node": "praise_cake",
+          "affection_change": 5
+        },
+        {
+          "text": "「嗯，还不错。」",
+          "next_node": "mild_praise",
+          "affection_change": 2
+        }
+      ]
+    },
+    "trust_taste": {
+      "speaker": "查维尔",
+      "text": "他微微一怔，随即别过头去。但你注意到，他的耳根似乎红了一点。\n\n「……也不是什么了不得的推荐。」他低声说，「就是觉得好吃，想让你也试试而已。」\n\n他端起茶杯喝了一口，假装很忙的样子。",
+      "emotion": "happy",
+      "next_node": "chapter_end"
+    },
+    "decline_cake": {
+      "speaker": "查维尔",
+      "text": "他默默地把碟子收了回去。\n\n「嗯。」他应了一声，没有多说什么，自己拿起一块绿豆糕咬了一口。\n\n气氛一时有些安静，但他似乎并不介意，依然自在地喝着茶。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "praise_cake": {
+      "speaker": "查维尔",
+      "text": "他微微点了点头，嘴角带着一丝不易察觉的弧度。\n\n「对吧。」他说，语气里带着一丝得意，「我就说这家店的绿豆糕做得好。」\n\n他又拿起一块递给你。\n\n「再吃一块吧，反正……我一个人也吃不完。」",
+      "emotion": "happy",
+      "next_node": "chapter_end"
+    },
+    "mild_praise": {
+      "speaker": "查维尔",
+      "text": "他看了你一眼，似乎对你这不咸不淡的评价有些不满，但也没说什么。\n\n「嗯。」他应了一声，自顾自地又吃了一块，这次没有推给你。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "碟子里的绿豆糕不知不觉得少了大半——大部分都进了你的肚子。查维尔看着空了大半的碟子，没有说话，但你注意到他的表情里有一种满足感，仿佛投喂你这件事本身就让他很开心。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

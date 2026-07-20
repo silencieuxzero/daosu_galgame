@@ -1,25 +1,32 @@
 {
+  // 脚本唯一标识符，用于在代码中引用
   "script_id": "teahouse_encounter",
+  // 脚本标题，向玩家展示
   "title": "茶馆雨遇",
+  // 起始节点 ID，对话从此节点开始
   "start_node": "start",
+  // 本脚本中登场的角色名称列表
   "characters": ["洛疏律"],
+  // 对话节点图：每个节点代表一次对话回合
   "nodes": {
+    // 起始节点：描述场景开场
     "start": {
-      "speaker": "narrator",
+      "speaker": "narrator",        // 说话者；"narrator" 表示旁白
       "text": "窗外下起了绵绵细雨，你推开一家老茶馆的木门，暖黄的灯光和淡淡的茶香扑面而来。",
-      "emotion": "neutral",
-      "next_node": "greeting"
+      "emotion": "neutral",         // 情绪标签：neutral/happy/sad/anxious 等
+      "next_node": "greeting"       // 无选项时的自动推进目标
     },
+    // 问候节点：包含三个选项分支
     "greeting": {
       "speaker": "洛疏律",
       "text": "（抬头看了你一眼，又低头继续写着什么）啊……欢迎。茶单在桌上，自己看就好。",
       "emotion": "neutral",
-      "choices": [
+      "choices": [                  // 玩家可选分支列表
         {
-          "text": "你在写什么？",
-          "next_node": "ask_notebook",
-          "option_id": "curious",
-          "affection_change": 2
+          "text": "你在写什么？",              // 选项显示文本
+          "next_node": "ask_notebook",         // 选择后跳转的目标节点
+          "option_id": "curious",              // 选项 ID，用于好感规则匹配
+          "affection_change": 2                // 选择后直接增减的好感度
         },
         {
           "text": "来一壶蜂蜜柚子茶。",
@@ -35,6 +42,7 @@
         }
       ]
     },
+    // 以下为各分支的后续节点 —— 线性推进，无选项
     "ask_notebook": {
       "speaker": "洛疏律",
       "text": "（合上笔记本，露出有些不好意思的表情）只是随便记一些想法……没什么特别的。",
@@ -53,6 +61,7 @@
       "emotion": "neutral",
       "next_node": "small_talk"
     },
+    // 公共推进节点：三个分支汇聚至此
     "small_talk": {
       "speaker": "洛疏律",
       "text": "（不知何时走到你桌旁，端着一杯冒着热气的茶）下雨天的茶馆总是特别安静……我很喜欢这样的氛围。你不觉得吗？",
@@ -71,7 +80,7 @@
           "affection_change": -2
         },
         {
-          "text": "静静听着",
+          "text": "静静听着",                    // 倾诉状态下动态增强的选项
           "next_node": "listen_end",
           "option_id": "listen_quietly",
           "affection_change": 5
@@ -96,13 +105,15 @@
       "emotion": "touched",
       "next_node": "end"
     },
+    // 终点节点：next_node 为 null 表示对话结束
     "end": {
       "speaker": "narrator",
       "text": "雨渐渐停了，夕阳的余晖透过窗棂洒进来。你起身离开时，看见他又从口袋里掏出那本A5笔记本，低头写着什么。",
       "emotion": "neutral",
-      "next_node": null
+      "next_node": null                          // null 表示对话终点
     }
   },
+  // 脚本元数据
   "metadata": {
     "author": "visual-novel",
     "version": "1.0"

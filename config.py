@@ -31,7 +31,7 @@ class PluginSectionConfig(PluginConfigBase):
 
     enabled: bool = Field(default=False, description="是否启用插件",
                           json_schema_extra={"label": "启用插件"})
-    config_version: str = Field(default="1.0.1", description="配置版本",
+    config_version: str = Field(default="1.1.0", description="配置版本",
                                 json_schema_extra={"label": "配置版本"})
 
 
@@ -130,16 +130,31 @@ class ForwardConfig(PluginConfigBase):
     __ui_icon__ = "forward"
     __ui_order__ = 6
 
-    enabled: bool = Field(default=True, description="是否启用合并转发",
+    enabled: bool = Field(default=False, description="是否启用合并转发（关闭时消息逐条发送，便于阅读）",
                           json_schema_extra={"label": "启用合并转发"})
     bot_name: str = Field(default="悼溯茶馆", description="机器人显示名称",
                           json_schema_extra={"label": "机器人名称"})
 
 
+class ChatConfig(PluginConfigBase):
+    """自由聊天模式配置。
+
+    Attributes:
+        default_model: 默认 LLM 模型名称，留空则使用 "replyer"。
+    """
+
+    __ui_label__ = "自由聊天"
+    __ui_icon__ = "message-square"
+    __ui_order__ = 7
+
+    default_model: str = Field(default="replyer", description="默认 LLM 模型（留空自动回退 replyer）",
+                                json_schema_extra={"label": "默认模型"})
+
+
 class VisualNovelPluginConfig(PluginConfigBase):
     """视觉小说插件配置。
 
-    聚合插件、数据、引导、好感度、存档、合并转发六部分配置。
+    聚合插件、数据、引导、好感度、存档、合并转发、自由聊天七部分配置。
     """
 
     plugin: PluginSectionConfig = Field(default_factory=PluginSectionConfig, description="插件基础配置（启用开关、配置版本）",
@@ -154,3 +169,5 @@ class VisualNovelPluginConfig(PluginConfigBase):
                              json_schema_extra={"label": "存档"})
     forward: ForwardConfig = Field(default_factory=ForwardConfig, description="合并转发消息配置（启用、自动发送、标题、机器人名）",
                                    json_schema_extra={"label": "合并转发"})
+    chat: ChatConfig = Field(default_factory=ChatConfig, description="自由聊天模式配置（LLM 模型）",
+                             json_schema_extra={"label": "自由聊天"})

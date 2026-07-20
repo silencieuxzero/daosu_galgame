@@ -10,9 +10,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from .character import CharacterPrompt
+if TYPE_CHECKING:
+    from .character import CharacterPrompt
 
 
 # 好感度等级与数值区间映射表

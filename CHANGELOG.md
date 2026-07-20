@@ -1,5 +1,79 @@
 # 变更日志
 
+## 1.2.0 (2026-07-20)
+
+### 新增功能
+
+- **自由聊天模式（LLM 驱动）**：新增 `/dsv chat <角色名>` 命令，与角色进行 LLM 驱动的实时对话
+  - 角色 prompt 从 `data/characters/` JSON 自动加载，构建为 LLM system prompt
+  - 对话历史维护最近 20 条消息，支持上下文连续对话
+  - 支持通过 `config.toml [chat].default_model` 配置使用的 LLM 模型（默认 `"replyer"`）
+  - 模型选择仅通过配置控制，禁止用户在命令中指定
+  - FSM 新增 `CHAT` 状态，EXPLORATION ↔ CHAT 双向转换
+  - 配套 `/dsv chat_exit` 退出聊天模式，回到 EXPLORATION 状态
+  - 好感度联动：LLM prompt 中注入当前好感度等级，影响角色回复风格
+- **Planner 阻止机制**：三层防御防止自由聊天消息进入 MaiBot Planner 处理链
+  - 新增 `chat.receive.before_process` 拦截 CHAT 状态非命令消息 → 返回 `{"action": "abort"}`
+  - 新增 `chat.command.after_execute` 拦截所有 `/dsv` 命令 → 设置 `intercept_message_level = 1`
+  - 异步非阻塞：LLM 调用通过 `asyncio.ensure_future` 异步执行，不阻塞主流程
+- **分段式剧情对话**：新增 `/dsv plot <角色名>` 命令，加载预编剧情脚本进行交互式对话
+  - JSON 节点图结构，支持选项分支与好感度联动，好/中/坏三种结局
+  - FSM 新增 `SAID_SCRIPT` / `AWAITING_CHOICE` 状态，通过 `/dsv choose` 和 `/dsv next` 交互
+  - 配套 `/dsv plot_exit` 退出剧情模式
+  - 支持多章节子目录结构：每位角色拥有独立的剧情文件夹（如 `data/plot/luoshulv/`）
+  - 系统自动扫描、验证并加载 `data/plot/<角色名>/` 下所有章节 JSON
+- **命令重命名**：`/dsv said` → `/dsv plot`，`/dsv say` → `/dsv chat`，同步更新所有内部引用
+- **配置热更新增强**：`reload()` 新增 plot 脚本重载和 chat 会话自动清理
+- **配置 UI 标签增强**：所有配置字段添加 `json_schema_extra={"label": ...}`，支持后台管理面板友好渲染
+
+### Bug 修复
+
+- **修复节点引用错误**：修正剧情对话脚本中的节点跳转引用，确保 `/dsv plot` 和 `/dsv said` 模式下选项分支正确推进
+
+### 重构
+
+- **ForwardService 替代 ForwardMessageCollector**：
+  - 移除 NapCat API 直接调用（`_call_napcat_api`、`send_direct`、`_http_post`、`_parse_stream_id`）
+  - 改用 Host `send.forward` 能力，每条消息包装为单个转发节点即时发送
+  - 转发不可用时自动降级为直接文本发送
+  - 配置项精简：移除 `auto_flush`、`display_title`、`napcat_url`、`request_timeout`
+- **对话展示移至 Renderer**：`send_dialogue_display()` 从 `plugin.py` 迁至 `renderer.py`，统一对话展示逻辑
+- **数据路径统一**：配置路径从 `plugins/visual_novel/data` 全部更新为 `plugins/daosu_galgame/data`
+- **`said.py` → `plot.py`**：模块重命名，新增多章节进度追踪和子目录扫描能力
+
+### 变更
+
+- `data/said/` 目录重命名为 `data/plot/`，每位角色拥有独立子目录（`data/plot/luoshulv/`、`data/plot/xaviel/`）
+- 移除 `[game]` 配置段（含 `default_gifts`）
+- `[forward]` 配置段精简：移除 NapCat 相关字段
+- `config.py`：移除 `GameConfig` 类，所有配置段字段添加 `json_schema_extra`
+
+### 技术改进
+
+- 新增 `modules/say_chat.py` 自由聊天引擎模块（`SayChatManager`）
+- 新增 `core/json_utils.py` 共享 JSON 注释清洗工具函数
+- 重构 `_strip_json_comments` 为统一工具，消除 `character.py` / `plot.py` 中的代码重复
+- 所有 data JSON 文件添加完整字段注释（角色数据、事件脚本、剧情脚本）
+- 配置文件新增 `[chat]` 配置段（`default_model` 字段）
+- `_manifest.json` 声明 `llm.generate` 能力
+- FSM 扩展至 12 种状态：新增 `SAID_SCRIPT`、`CHAT` 状态及合法转换规则
+
+### 可攻略角色（新增剧情）
+
+- **洛疏律** — 5 章分段式剧情（`data/plot/luoshulv/`），每章好/中/坏三结局
+- **查维尔** — 5 章分段式剧情（`data/plot/xaviel/`），每章好/中/坏三结局
+
+### 命令列表
+
+| 命令 | 功能 |
+|------|------|
+| `/dsv plot <角色名>` | 分段式剧情对话 |
+| `/dsv plot_exit` | 退出剧情模式 |
+| `/dsv chat <角色名>` | 自由聊天（LLM 驱动） |
+| `/dsv chat_exit` | 退出自由聊天 |
+| `/dsv choose <编号>` | 在对话框分支中选择选项 |
+| `/dsv next` | 推进当前对话到下一节点 |
+
 ## 1.0.1 (2026-07-19)
 
 「悼溯茶馆」视觉小说插件首个正式版本。在此版本中，所有历史迭代内容已完成统一整合。

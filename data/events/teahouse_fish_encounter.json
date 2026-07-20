@@ -1,8 +1,13 @@
 {
+  // 脚本唯一标识符，用于在代码中引用
   "script_id": "teahouse_fish_encounter",
+  // 脚本标题，向玩家展示
   "title": "鱼池边的茶客",
+  // 起始节点 ID
   "start_node": "start",
+  // 本脚本中登场的角色名称列表
   "characters": ["查维尔"],
+  // 对话节点图
   "nodes": {
     "start": {
       "speaker": "narrator",
@@ -10,6 +15,7 @@
       "emotion": "neutral",
       "next_node": "greeting"
     },
+    // 问候节点：包含三个选项分支
     "greeting": {
       "speaker": "查维尔",
       "text": "（察觉到你的目光，抬眼看过来）……要坐就坐，别站着挡光。",
@@ -25,7 +31,7 @@
           "text": "听说你后院养了鱼？",
           "next_node": "ask_fish",
           "option_id": "fish_topic",
-          "affection_change": 3
+          "affection_change": 3          // 投其所好的选项，好感增幅更大
         },
         {
           "text": "（默默在隔壁桌坐下）",
@@ -35,6 +41,7 @@
         }
       ]
     },
+    // 各分支节点
     "ask_looking": {
       "speaker": "查维尔",
       "text": "（目光重新移向窗外）……没什么。就是在看云。你不觉得它们游来游去的样子，很像鱼吗？",
@@ -53,6 +60,7 @@
       "emotion": "neutral",
       "next_node": "small_talk"
     },
+    // 公共推进节点
     "small_talk": {
       "speaker": "查维尔",
       "text": "（抿了一口茶，忽然开口）喂——你说，如果有一天你发现……自己根本不是你以为的那种人，你会怎么办？",
@@ -68,13 +76,13 @@
           "text": "哈哈，你说话好奇怪啊。",
           "next_node": "tease",
           "option_id": "joking",
-          "affection_change": -2
+          "affection_change": -2         // 负面选项，好感度降低
         },
         {
           "text": "静静听着",
           "next_node": "listen_end",
           "option_id": "listen_quietly",
-          "affection_change": 5
+          "affection_change": 5          // 倾听型选项，好感大幅提升
         }
       ]
     },
@@ -96,6 +104,7 @@
       "emotion": "touched",
       "next_node": "end"
     },
+    // 终点节点
     "end": {
       "speaker": "narrator",
       "text": "茶渐渐凉了。那个人又恢复了最初的模样，安静地坐在窗边，目光追随着窗外流动的云。仿佛刚才那段对话从未发生过。",

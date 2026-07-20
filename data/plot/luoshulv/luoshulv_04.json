@@ -1,0 +1,106 @@
+{
+  "script_id": "luoshulv_04",
+  "character_name": "洛疏律",
+  "title": "午后的对话",
+  "start_node": "start",
+  "nodes": {
+    "start": {
+      "speaker": "narrator",
+      "text": "又是一个晴朗的午后，和上次的雨天截然不同。阳光透过窗户洒进来，在地板上铺开一层温暖的光。茶馆里只有零星的几位客人，空气里弥漫着清新的茶香。\n\n洛疏律难得地没有在写笔记，而是捧着一本书在看。他看得很入神，连你走到他旁边都没察觉。",
+      "emotion": "neutral",
+      "next_node": "greeting"
+    },
+    "greeting": {
+      "speaker": "洛疏律",
+      "text": "直到你在他对面坐下，他才抬起头来，眼神中还带着一丝阅读后的迷离。\n\n「啊，你来了。」他合上书，揉了揉眼睛，「抱歉，看入神了。」",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「在看什么书这么入迷？」",
+          "next_node": "ask_book",
+          "affection_change": 4
+        },
+        {
+          "text": "「你看书的样子很专注啊。」",
+          "next_node": "compliment",
+          "affection_change": 5
+        },
+        {
+          "text": "「没事，你继续看，我不打扰你。」",
+          "next_node": "let_him_read",
+          "affection_change": 2
+        }
+      ]
+    },
+    "ask_book": {
+      "speaker": "洛疏律",
+      "text": "他把书的封面翻过来给你看——是一本旧版的散文集，书页已经有些泛黄了。\n\n「是一位客人送的书。」他轻声说，「讲的是一个人在山里独居的日常。文字很平淡，但读着读着就会觉得，那种生活其实也挺好的。」\n\n他的手指轻轻抚过书页，似乎在回味其中的句子。",
+      "emotion": "neutral",
+      "choices": [
+        {
+          "text": "「你向往那样的生活吗？」",
+          "next_node": "deep_question",
+          "affection_change": 6
+        },
+        {
+          "text": "「听起来是本不错的书，借我看看？」",
+          "next_node": "borrow_book",
+          "affection_change": 4
+        }
+      ]
+    },
+    "compliment": {
+      "speaker": "洛疏律",
+      "text": "他微微一怔，随即有些不好意思地低下头。\n\n「……谢谢。」他的声音轻得像耳语，「其实我只是……觉得书里的世界比现实安静一些。」\n\n他说完似乎意识到自己的话有些奇怪，连忙补充道：「当然，茶馆已经很安静了。我是说——算了，你别在意。」",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "let_him_read": {
+      "speaker": "洛疏律",
+      "text": "他犹豫了一下，还是放下了书。\n\n「没事，也看了一会儿了，正好休息一下。」他给你倒了一杯茶，「你今天来得比平时晚一些，是有什么事耽搁了吗？」",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "deep_question": {
+      "speaker": "洛疏律",
+      "text": "他沉默了一会儿，目光落在窗外。\n\n「……说不上向往。」他缓缓开口，「只是觉得，有时候人的想法会变。以前觉得重要的东西，后来可能就不那么重要了。以前没想过的事情，反而会慢慢浮上来。」\n\n他转回头看你，眼神里带着一种说不清的情绪。\n\n「你呢？你有过这样的感觉吗？」",
+      "emotion": "sad",
+      "choices": [
+        {
+          "text": "「当然有，人都是会变的。」",
+          "next_node": "share_feeling",
+          "affection_change": 6
+        },
+        {
+          "text": "「我觉得你好像藏着很多事情。」",
+          "next_node": "gentle_probe",
+          "affection_change": 5
+        }
+      ]
+    },
+    "borrow_book": {
+      "speaker": "洛疏律",
+      "text": "他低头看了看手中的书，犹豫了一下。\n\n「嗯……可以是可以。」他轻轻抚了抚书页，「不过这本书是那位客人送的，我还没看完。等我读完了再借给你，好吗？」\n\n他的语气温和，带着一丝小心翼翼的歉意。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "share_feeling": {
+      "speaker": "洛疏律",
+      "text": "他轻轻点了点头，似乎对你的回答并不意外。\n\n「是啊……人都是会变的。」他重复了一遍你的话，语气里带着一丝释然，「听你这么说，我好像没那么纠结了。」\n\n他端起茶杯，浅浅地抿了一口，神情比刚才轻松了许多。",
+      "emotion": "warm",
+      "next_node": "chapter_end"
+    },
+    "gentle_probe": {
+      "speaker": "洛疏律",
+      "text": "他愣了一下，随即低下头去。\n\n「……也许吧。」他没有否认，也没有承认，「每个人都有不想说的事情，不是吗？就像你也不会把所有事情都告诉我一样。」\n\n他抬起头，对你笑了笑——那笑容里有感谢，也有一道清晰的界限。",
+      "emotion": "neutral",
+      "next_node": "chapter_end"
+    },
+    "chapter_end": {
+      "speaker": "narrator",
+      "text": "午后的阳光透过百叶窗在地板上投下斑驳的光影，时间在不知不觉中悄然流逝。洛疏律又翻开了那本书，但这次，他没有看太久，偶尔会抬头看看你，仿佛在确认你还在那里。窗外的光线已渐渐西斜，黄昏正在靠近。",
+      "emotion": "warm",
+      "next_node": null
+    }
+  }
+}

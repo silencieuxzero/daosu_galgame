@@ -164,9 +164,15 @@ class ForwardService:
             else:
                 lines.append("\n请选择：")
             for c in choices:
-                lines.append(f"  /dsv choose {c['index']} — {c['text']}")
+                idx = c.get("index", 0) + 1
+                lines.append(f"  {idx}. {c['text']}")
+            if not is_tutorial:
+                lines.append("\n💡 输入 /dsv choose <编号> 选择选项")
         else:
-            if is_tutorial:
+            if result.get("tutorial_complete"):
+                lines.append("\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈")
+                lines.append("✨ 新手引导已结束，现在可以自由探索茶馆了！")
+            elif is_tutorial:
                 lines.append("\n┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈")
                 lines.append("输入 /dsv next 继续，或 /dsv skip tutorial 跳过引导")
             else:

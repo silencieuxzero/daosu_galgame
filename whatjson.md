@@ -149,9 +149,11 @@
 ## 4. 分段式剧情对话 — `data/plot/*.json`
 
 供 `/dsv plot <角色名>` 命令使用的交互式分段剧情，结构与事件脚本类似，但独立管理，专用于角色专属的剧情线。
-存储于 `data/plot/` 目录。
+存储于 `data/plot/` 目录下，每位角色拥有独立子目录。
 
-**文件：** `luoshulv_said.json`、`xaviel_said.json`
+**目录结构：** `data/plot/luoshulv/`、`data/plot/xaviel/`
+
+**文件：** `luoshulv_01.json` ~ `luoshulv_05.json`（洛疏律 5 章）、`xaviel_01.json` ~ `xaviel_05.json`（查维尔 5 章）
 
 ### 顶层字段
 
@@ -227,8 +229,8 @@
 | `data/events/tutorial_intro.json` | 事件脚本 | 新手引导 |
 | `data/events/flower_shop_encounter.json` | 事件脚本 | 洛疏律的茶馆雨遇事件 |
 | `data/events/teahouse_fish_encounter.json` | 事件脚本 | 查维尔的鱼池事件 |
-| `data/plot/luoshulv_said.json` | 分段剧情 | 洛疏律的交互式剧情线（13 节点） |
-| `data/plot/xaviel_said.json` | 分段剧情 | 查维尔的交互式剧情线（12 节点） |
+| `data/plot/luoshulv/luoshulv_01.json` ~ `luoshulv_05.json` | 分段剧情 | 洛疏律的交互式剧情线（5 章） |
+| `data/plot/xaviel/xaviel_01.json` ~ `xaviel_05.json` | 分段剧情 | 查维尔的交互式剧情线（5 章） |
 
 ---
 

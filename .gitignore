@@ -22,6 +22,9 @@ venv/
 # IDE 配置
 .vscode/
 
+# 备份文件
+config_back/
+
 # 系统文件
 Thumbs.db
 .DS_Store

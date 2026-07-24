@@ -289,8 +289,9 @@ class DialogueManager:
     def advance(self) -> DialogueNode | None:
         """自动推进到下一个节点。
 
-        仅当当前节点没有选项分支且有 next_node 时有效。
-        如果当前节点有选项分支（需玩家选择）、或 next_node 为 None（对话结束），则返回 None。
+        如果当前节点有选项分支，自动选择第一个选项（模拟用户选择）。
+        如果当前节点没有选项分支且有 next_node，则直接推进。
+        如果 next_node 为 None（对话结束），则返回 None。
 
         Returns:
             下一个对话节点，无法推进时返回 None。
@@ -299,7 +300,8 @@ class DialogueManager:
             return None
 
         if self._current_node.has_choices():
-            return None  # 有选项时需玩家选择，不能自动推进
+            # 自动选择第一个选项
+            return self.choose(0)
 
         next_id = self._current_node.next_node
         if next_id is None:

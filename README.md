@@ -1,7 +1,7 @@
 # 悼溯茶馆 — 视觉小说插件
 
 基于 MaiBot 平台的文字类视觉小说插件，背景设定于 **悼溯茶馆**。
-玩家可在茶馆中邂逅形形色色的角色，通过日常对话、礼物赠送、邀约活动等方式培养好感度，逐步解锁角色的过往故事。
+玩家可在茶馆中邂逅形形色色的角色，通过日常对话和剧情选择培养好感度，逐步解锁角色的过往故事。
 
 ## 目录
 
@@ -16,7 +16,6 @@
   - [自由聊天模式](#自由聊天模式)
   - [Planner 阻止机制](#planner-阻止机制)
   - [情绪倾诉系统](#情绪倾诉系统)
-  - [记事本与线索系统](#记事本与线索系统)
   - [存档系统](#存档系统)
   - [合并转发消息](#合并转发消息)
 - [架构设计](#架构设计)
@@ -93,7 +92,7 @@ min_value = -100
 max_slots = 20                                # 存档槽位数量
 
 [forward]
-enabled = true                                # 合并转发开关
+enabled = false                               # 合并转发开关
 bot_name = "悼溯茶馆"
 
 [chat]
@@ -111,15 +110,10 @@ default_model = "replyer"                     # 自由聊天默认 LLM 模型
 | `/dsv start` | 启动视觉小说（首次自动进入引导） |
 | `/dsv tutorial` | 重新进入新手引导 |
 | `/dsv next` | 推进当前对话到下一节点 |
-| `/dsv choose <编号>` | 在对话分支中选择选项 |
-| `/dsv explore <角色名>` | 与指定角色开始日常对话探索 |
 | `/dsv plot <角色名>` | 与角色进行分段式剧情对话 |
 | `/dsv plot_exit` | 退出剧情对话模式 |
 | `/dsv chat <角色名>` | 与角色进行自由聊天（LLM 驱动） |
 | `/dsv chat_exit` | 退出自由聊天模式 |
-| `/dsv gift <角色名> <礼物名>` | 向角色赠送礼物 |
-| `/dsv invite <角色名> <活动名>` | 邀请角色参加活动 |
-| `/dsv notebook [角色名]` | 查看记事本（可选指定角色筛选线索） |
 | `/dsv status` | 查看游戏状态（FSM 状态、各角色好感度） |
 | `/dsv save <槽位1-20> [标签]` | 保存游戏进度到指定槽位 |
 | `/dsv load <槽位1-20>` | 读取指定槽位的存档 |
@@ -129,7 +123,6 @@ default_model = "replyer"                     # 自由聊天默认 LLM 模型
 此外，插件提供 `@Tool` 供 LLM 调用：
 - **dsv_character_info** — 获取角色详细信息（性格、背景、好感度等）
 - **dsv_game_status** — 获取游戏运行状态总览
-- **dsv_gift_hints** — 查看记事本中的礼物线索提示
 - **dsv_list_characters** — 列出所有可攻略角色及其好感度
 
 ## 系统机制
@@ -171,7 +164,7 @@ default_model = "replyer"                     # 自由聊天默认 LLM 模型
 
 通过 `/dsv plot <角色名>` 命令进入，加载角色专属的预编 JSON 剧情脚本。
 每段剧情由节点图构成，包含好、中、坏三种结局，用户通过选项分支推进剧情。
-选项会实时影响角色好感度，FSM 切换到 `SAID_SCRIPT` 状态。
+选项会实时影响角色好感度，FSM 切换到 `PLOT_SCRIPT` 状态。
 配套 `/dsv plot_exit` 随时退出。
 
 剧情脚本存储于 `data/plot/` 目录下，每位角色拥有独立子目录：
@@ -187,9 +180,8 @@ default_model = "replyer"                     # 自由聊天默认 LLM 模型
 对话历史维护最近 20 条消息，支持上下文连续的对话体验。
 
 - **模型配置**：通过 `config.toml [chat].default_model` 指定，默认 `"replyer"`
-- **好感度联动**：LLM prompt 中注入当前好感度等级，影响角色回复风格
-- **退出方式**：通过 `/dsv chat_exit` 命令退出
-- FSM 切换到 `CHAT` 状态，退出后回到 `EXPLORATION`
+- 好感度联动：LLM prompt 中注入当前好感度等级，影响角色回复风格
+- FSM 切换到 `CHAT` 状态，退出后回到 `PLOT_SCRIPT`
 
 ### Planner 阻止机制
 
@@ -206,18 +198,10 @@ default_model = "replyer"                     # 自由聊天默认 LLM 模型
 
 当对话检测到角色处于倾诉烦恼状态（`emotion` 为 `sad` / `anxious` / `frustrated` / `venting`）时，系统自动在选项中增加 **「静静听着」** 选项。选择该选项会触发特定的好感度调整（默认 +5），并推动角色情感表达。
 
-### 记事本与线索系统
-
-- 日常对话中自动检测喜好线索并记录到记事本
-- 线索分类：喜爱之物、厌恶之物、兴趣爱好、性格特点、过往经历
-- 按角色分类整理，支持按角色名筛选查看
-- 赠送礼物时自动比对已知线索，提示是否符合角色喜好
-- 线索数据随存档一起持久化
-
 ### 存档系统
 
 - 支持 20 个独立存档槽位（数量可通过 `[save]` 配置段调整）
-- 存档内容：好感度、记事本、互动状态、选择历史、当前对话进度
+- 存档内容：好感度、选择历史、当前对话进度
 - 原子写入策略（先写临时文件再重命名），防止写入中断导致存档损坏
 - JSON 格式存储，可读性强
 
@@ -235,15 +219,13 @@ default_model = "replyer"                     # 自由聊天默认 LLM 模型
 plugins/daosu_galgame/
 ├── core/                  # 核心基础设施
 │   ├── __init__.py
-│   ├── fsm.py             # 有限状态机（13 种状态，预定义转换规则）
+│   ├── fsm.py             # 有限状态机（9 种状态，预定义转换规则）
 │   └── exceptions.py      # 自定义异常类型体系
 ├── modules/               # 功能模块
 │   ├── __init__.py
 │   ├── character.py       # 角色系统：加载与管理角色 prompt 数据
 │   ├── dialogue.py        # 对话系统：节点式剧情脚本引擎
 │   ├── affection.py       # 好感度系统：7 级好感度体系
-│   ├── notebook.py        # 记事本与线索系统
-│   ├── interaction.py     # 互动行为系统：礼物赠送与邀约活动
 │   ├── plot.py            # 分段式剧情对话引擎（/dsv plot，多章节支持）
 │   ├── say_chat.py        # 自由聊天引擎（/dsv chat，LLM 驱动）
 │   ├── save_manager.py    # 存档管理：可配置槽位 JSON 持久化
@@ -284,16 +266,15 @@ plugins/daosu_galgame/
 
 ### 有限状态机
 
-游戏流程由 13 种状态驱动，所有状态转换须符合预定义的合法规则：
+游戏流程由 9 种状态驱动，所有状态转换须符合预定义的合法规则：
 
 ```
 IDLE → {MAIN_MENU, TUTORIAL}
-MAIN_MENU → {EXPLORATION, SAVE_MENU, NOTEBOOK, TUTORIAL}
-TUTORIAL → {DIALOGUE, AWAITING_CHOICE, MAIN_MENU}
-EXPLORATION → {DIALOGUE, EVENT, GIFT_MENU, INVITE_MENU, NOTEBOOK, SAVE_MENU, CHAT}
-DIALOGUE → {EXPLORATION, EVENT, AWAITING_CHOICE, SAVE_MENU}
-AWAITING_CHOICE → {DIALOGUE, EVENT, EXPLORATION, SAID_SCRIPT}
-SAID_SCRIPT → {AWAITING_CHOICE, EXPLORATION}
+MAIN_MENU → {EXPLORATION, SAVE_MENU, TUTORIAL}
+TUTORIAL → {DIALOGUE, MAIN_MENU}
+EXPLORATION → {DIALOGUE, EVENT, SAVE_MENU, CHAT, PLOT_SCRIPT}
+DIALOGUE → {EXPLORATION, EVENT, SAVE_MENU}
+EVENT → {DIALOGUE, EXPLORATION, PLOT_SCRIPT}
 CHAT → {EXPLORATION, MAIN_MENU}
 ```
 

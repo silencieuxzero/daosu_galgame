@@ -110,6 +110,17 @@ class PlotNode:
         """当前节点是否有选项分支。"""
         return len(self.choices) > 0
 
+    def is_venting(self) -> bool:
+        """检测当前节点是否为倾诉烦恼状态。
+
+        当节点的 emotion 标签为 sad、anxious、frustrated 或 venting 时，
+        判定角色处于需要被倾听的状态，UI 层会动态添加"静静听着"选项。
+
+        Returns:
+            如果是倾诉烦恼状态返回 True。
+        """
+        return self.emotion in ("sad", "anxious", "frustrated", "venting")
+
 
 @dataclass
 class PlotScript:
@@ -191,6 +202,9 @@ class PlotManager:
         self._progress_path = os.path.join(plot_dir, ".progress.json")
         self._completed_scripts: dict[str, list[str]] = {}  # character_name -> [script_id, ...]
         self._load_progress()
+
+        # 线性模式：待确认的下一章节
+        self._pending_next_character: str | None = None
 
     # ==================== 进度追踪 ====================
 
@@ -659,6 +673,40 @@ class PlotManager:
         """
         return self.get_next_script_for_character(character_name) is not None
 
+    # ==================== 线性模式：章节过渡 ====================
+
+    def set_pending_next_character(self, character_name: str) -> None:
+        """设置待确认的下一章节角色。
+
+        当一段剧情结束且还有后续章节时调用，
+        等待玩家确认是否继续。
+
+        Args:
+            character_name: 角色名称。
+        """
+        self._pending_next_character = character_name
+
+    def get_pending_next_character(self) -> str | None:
+        """获取待确认的下一章节角色名。"""
+        return self._pending_next_character
+
+    def has_pending_next(self) -> bool:
+        """检查是否有待确认的下一章节。"""
+        return self._pending_next_character is not None
+
+    def confirm_next_chapter(self) -> dict[str, Any]:
+        """玩家确认继续，启动下一章节。
+
+        Returns:
+            下一章节的起始节点数据，或错误信息。
+        """
+        if self._pending_next_character is None:
+            return {"success": False, "message": "没有待确认的下一章节。"}
+
+        character = self._pending_next_character
+        self._pending_next_character = None
+        return self.start_next_script(character)
+
     # ==================== 对话流程 ====================
 
     def start_next_script(self, character_name: str) -> dict[str, Any]:
@@ -741,7 +789,8 @@ class PlotManager:
             return {"success": False, "message": f"节点 '{node_id}' 不存在。"}
 
         self._current_node = node
-        return self._format_node_output(node)
+        result = self._format_node_output(node)
+        return result
 
     def _format_node_output(self, node: PlotNode) -> dict[str, Any]:
         """格式化节点输出为统一字典。
@@ -823,7 +872,13 @@ class PlotManager:
         return result
 
     def advance(self) -> dict[str, Any]:
-        """自动推进到下一节点（无选项时使用）。
+        """推进到下一节点。
+
+        当当前节点有选项时，返回当前节点并标记 awaiting_choice，
+        等待玩家使用 /dsv choose <编号> 选择选项，不会自动选择。
+
+        当当前节点无选项且 next_node 不为空时，直接跳转到下一节点。
+        如果 next_node 为 None，标记对话结束。
 
         Returns:
             下一节点数据或结束标记。
@@ -832,10 +887,8 @@ class PlotManager:
             return {"success": False, "message": "当前没有活跃的剧情对话。"}
 
         if self._current_node.has_choices():
-            # 有选项时转为等待选择
-            result = self._format_node_output(self._current_node)
-            result["awaiting_choice"] = True
-            return result
+            # 有选项时返回当前节点，等待玩家手动选择
+            return self._format_node_output(self._current_node)
 
         next_id = self._current_node.next_node
         if next_id is None:
@@ -846,11 +899,14 @@ class PlotManager:
     def end_dialogue(self) -> dict[str, Any]:
         """结束当前剧情对话，重置状态。
 
+        同时清除待确认的下一章节状态。
+
         Returns:
             操作结果。
         """
         self._current_script = None
         self._current_node = None
+        self._pending_next_character = None
         return {"success": True, "message": "已退出剧情对话模式。"}
 
     def get_current_node(self) -> PlotNode | None:
@@ -862,8 +918,8 @@ class PlotManager:
         return self._current_script
 
     def is_active(self) -> bool:
-        """检查当前是否有活跃的剧情对话。"""
-        return self._current_node is not None
+        """检查当前是否有活跃的剧情对话或有待确认的下一章节。"""
+        return self._current_node is not None or self._pending_next_character is not None
 
     def list_scripts(self) -> list[dict[str, str]]:
         """列出所有可用剧情脚本。

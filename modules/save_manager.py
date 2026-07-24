@@ -33,8 +33,6 @@ class SaveSlot:
         current_script: 当前对话脚本 ID。
         current_node: 当前对话节点 ID。
         affection_data: 好感度管理器导出的状态。
-        notebook_data: 记事本管理器导出的线索列表。
-        interaction_data: 互动管理器导出的状态（如背包）。
         choice_history: 玩家选择记录列表。
         metadata: 额外元数据，可扩展。
     """
@@ -46,8 +44,6 @@ class SaveSlot:
     current_script: str | None = None
     current_node: str | None = None
     affection_data: dict[str, dict[str, Any]] = field(default_factory=dict)
-    notebook_data: list[dict[str, Any]] = field(default_factory=list)
-    interaction_data: dict[str, Any] = field(default_factory=dict)
     choice_history: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
@@ -65,8 +61,6 @@ class SaveSlot:
             "current_script": self.current_script,
             "current_node": self.current_node,
             "affection_data": self.affection_data,
-            "notebook_data": self.notebook_data,
-            "interaction_data": self.interaction_data,
             "choice_history": self.choice_history,
             "metadata": self.metadata,
         }
@@ -89,8 +83,6 @@ class SaveSlot:
             current_script=data.get("current_script"),
             current_node=data.get("current_node"),
             affection_data=data.get("affection_data", {}),
-            notebook_data=data.get("notebook_data", []),
-            interaction_data=data.get("interaction_data", {}),
             choice_history=data.get("choice_history", []),
             metadata=data.get("metadata", {}),
         )
@@ -180,8 +172,6 @@ class SaveManager:
         current_script: str | None = None,
         current_node: str | None = None,
         affection_data: dict[str, dict[str, Any]] | None = None,
-        notebook_data: list[dict[str, Any]] | None = None,
-        interaction_data: dict[str, Any] | None = None,
         extra_metadata: dict[str, Any] | None = None,
     ) -> SaveSlot:
         """保存游戏进度到指定槽位。
@@ -196,8 +186,6 @@ class SaveManager:
             current_script: 当前对话脚本 ID。
             current_node: 当前对话节点 ID。
             affection_data: 好感度管理器导出的数据。
-            notebook_data: 记事本管理器导出的数据。
-            interaction_data: 互动管理器导出的数据。
             extra_metadata: 额外元数据。
 
         Returns:
@@ -219,8 +207,6 @@ class SaveManager:
             current_script=current_script,
             current_node=current_node,
             affection_data=affection_data or {},
-            notebook_data=notebook_data or [],
-            interaction_data=interaction_data or {},
             choice_history=list(self._choice_history),
             metadata=extra_metadata or {},
         )

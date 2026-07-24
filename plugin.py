@@ -252,74 +252,17 @@ class VisualNovelPlugin(MaiBotPlugin):
 
         if result.get("is_tutorial"):
             await self._renderer.send_dialogue_display(stream_id, result)
-            return True, "进入新手引导", False
+            return True, "进入新手引导", True
 
         # 非首次/非引导：直接发送
         await self.ctx.send.text(
             f"📖 视觉小说已启动！\n"
             f"可用角色：{'、'.join(result.get('characters', []))}\n\n"
-            f"输入 /dsv explore <角色名> 进入故事模式\n"
+            f"输入 /dsv plot <角色名> 进入故事模式\n"
             f"输入 /dsv status 查看游戏状态",
             stream_id,
         )
         return True, "视觉小说已启动", True
-
-    @Command(
-        "dsv_explore",
-        description="与指定角色开始故事模式（探索+剧情统一体验）",
-        pattern=r"^/dsv explore\s+(?P<character>.+)$",
-        intercept_message_level=1,
-    )
-    async def handle_novel_explore(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
-        """进入与指定角色的统一游戏模式。
-
-        切换到 PLOT_SCRIPT 状态，显示角色好感度信息和可用指令。
-        在游戏模式中可同时进行剧情推进和自由探索互动。
-
-        Returns:
-            Command 标准返回值。
-        """
-        matched_groups = kwargs.get("matched_groups", {})
-        character_name = str(matched_groups.get("character", "")).strip()
-
-        if not character_name:
-            return False, "请指定角色名。用法：/dsv explore <角色名>", True
-
-        if self._renderer is None:
-            return False, "插件未正确加载。", True
-
-        result = await self._renderer.start_exploration(character_name)
-        if not result.get("success"):
-            return False, result.get("message", "操作失败。"), True
-
-        # 构建提示信息
-        lines = [
-            f"� 开始与 {character_name} 的故事。",
-            f"好感度等级：{result['affection_level']}（{result['affection_value']}）",
-        ]
-
-        if result.get("has_plot"):
-            if result.get("all_completed"):
-                lines.append("所有章节已完成。")
-            elif result.get("next_chapter"):
-                lines.append(f"下一章：{result['next_chapter']}")
-
-        lines.extend([
-            "",
-            "可用指令：",
-            "  /dsv next — 推进剧情到下一节点",
-            "  /dsv plot <角色名> — 开始/继续剧情章节",
-            "  /dsv chat <角色名> — 进入自由聊天模式",
-            "  /dsv gift <角色名> <礼物名> — 赠送礼物",
-            "  /dsv invite <角色名> <活动名> — 邀请活动",
-            "  /dsv notebook — 查看记事本",
-            "  /dsv save <槽位> — 存档",
-            "  /dsv status — 查看状态",
-            "  /dsv plot_exit — 退出返回主菜单",
-        ])
-
-        await self.ctx.send.text("\n".join(lines), stream_id)
-        return True, f"开始与 {character_name} 的故事", False
 
     @Command(
         "dsv_status",
@@ -365,109 +308,6 @@ class VisualNovelPlugin(MaiBotPlugin):
         return True, "已显示游戏状态", True
 
     @Command(
-        "dsv_notebook",
-        description="查看记事本",
-        pattern=r"^/dsv notebook\s*(?P<character>.*)$",
-        intercept_message_level=1,
-    )
-    async def handle_novel_notebook(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
-        """查看记事本中的线索记录。
-
-        可选指定角色名，查看该角色的专属线索。
-
-        Args:
-            stream_id: 消息流 ID。
-            kwargs: 包含 matched_groups 中的 character 参数。
-
-        Returns:
-            Command 标准返回值。
-        """
-        matched_groups = kwargs.get("matched_groups", {})
-        character_name = str(matched_groups.get("character", "")).strip() or None
-
-        if self._renderer is None:
-            return False, "插件未正确加载。", True
-
-        result = await self._renderer.show_notebook(character_name)
-        await self.ctx.send.text(result["summary"], stream_id)
-        return True, "已显示记事本", False
-
-    @Command(
-        "dsv_gift",
-        description="向角色赠送礼物",
-        pattern=r"^/dsv gift\s+(?P<character>.+?)\s+(?P<gift>.+)$",
-        intercept_message_level=1,
-    )
-    async def handle_novel_gift(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
-        """赠送礼物给指定角色。
-
-        支持从玩家背包中选择礼物赠送，附带记事本线索提示。
-
-        Args:
-            stream_id: 消息流 ID。
-            kwargs: 包含 character 和 gift 参数。
-
-        Returns:
-            Command 标准返回值。
-        """
-        matched_groups = kwargs.get("matched_groups", {})
-        character_name = str(matched_groups.get("character", "")).strip()
-        gift_name = str(matched_groups.get("gift", "")).strip()
-
-        if not character_name or not gift_name:
-            return False, "用法：/dsv gift <角色名> <礼物名>", True
-
-        if self._renderer is None:
-            return False, "插件未正确加载。", True
-
-        result = await self._renderer.give_gift(character_name, gift_name)
-        if not result.get("success"):
-            return False, result.get("message", "赠送礼物失败。"), True
-
-        hint = result.get("hint")
-        msg = result["message"]
-        if hint:
-            msg += f"\n{hint}"
-
-        await self.ctx.send.text(msg, stream_id)
-        return True, msg, True
-
-    @Command(
-        "dsv_invite",
-        description="邀请角色参加活动",
-        pattern=r"^/dsv invite\s+(?P<character>.+?)\s+(?P<activity>.+)$",
-        intercept_message_level=1,
-    )
-    async def handle_novel_invite(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
-        """邀请角色参加活动。
-
-        根据活动类型和角色关系影响好感度。
-
-        Args:
-            stream_id: 消息流 ID。
-            kwargs: 包含 character 和 activity 参数。
-
-        Returns:
-            Command 标准返回值。
-        """
-        matched_groups = kwargs.get("matched_groups", {})
-        character_name = str(matched_groups.get("character", "")).strip()
-        activity_name = str(matched_groups.get("activity", "")).strip()
-
-        if not character_name or not activity_name:
-            return False, "用法：/dsv invite <角色名> <活动名>", True
-
-        if self._renderer is None:
-            return False, "插件未正确加载。", True
-
-        result = await self._renderer.invite_activity(character_name, activity_name)
-        if not result.get("success"):
-            return False, result.get("message", "邀请失败。"), True
-
-        await self.ctx.send.text(result["message"], stream_id)
-        return True, result["message"], True
-
-    @Command(
         "dsv_save",
         description="保存游戏进度",
         pattern=r"^/dsv save\s+(?P<slot>\d+)\s*(?P<label>.*)$",
@@ -476,7 +316,7 @@ class VisualNovelPlugin(MaiBotPlugin):
     async def handle_novel_save(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
         """保存游戏到指定槽位。
 
-        保存内容包括好感度、记事本、互动状态、选择历史等。
+        保存内容包括好感度、选择历史等。
 
         Args:
             stream_id: 消息流 ID。
@@ -512,7 +352,7 @@ class VisualNovelPlugin(MaiBotPlugin):
     async def handle_novel_load(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
         """读取指定槽位的存档。
 
-        恢复好感度、记事本、互动状态等全部数据。
+        恢复好感度等全部数据。
 
         Args:
             stream_id: 消息流 ID。
@@ -532,7 +372,7 @@ class VisualNovelPlugin(MaiBotPlugin):
             return False, result.get("message", "读档失败。"), True
 
         await self.ctx.send.text(result["message"], stream_id)
-        return True, result["message"], False
+        return True, result["message"], True
 
     @Command(
         "dsv_help",
@@ -555,16 +395,12 @@ class VisualNovelPlugin(MaiBotPlugin):
             "可用命令：\n"
             "  /dsv start — 启动游戏（首次自动进入引导）\n"
             "  /dsv tutorial — 重新查看新手引导\n"
-            "  /dsv explore <角色名> — 进入角色故事模式（剧情+探索统一体验）\n"
             "  /dsv plot <角色名> — 开始/继续剧情章节\n"
             "  /dsv plot_exit — 退出游戏模式，返回主菜单\n"
             "  /dsv chat <角色名> — 与角色进行自由聊天（LLM 驱动）\n"
             "  /dsv chat_exit — 退出自由聊天模式\n"
-            "  /dsv next — 推进对话到下一节点\n"
-            "  /dsv choose <编号> — 选择对话选项\n"
-            "  /dsv gift <角色名> <礼物名> — 赠送礼物\n"
-            "  /dsv invite <角色名> <活动名> — 邀请活动\n"
-            "  /dsv notebook [角色名] — 查看记事本\n"
+            "  /dsv next — 推进对话到下一节点；章节结束时输入确认继续下一章\n"
+            "  /dsv choose <编号> — 在剧情对话中选择选项分支\n"
             "  /dsv status — 查看游戏状态\n"
             "  /dsv save <槽位1-20> [标签] — 存档\n"
             "  /dsv load <槽位1-20> — 读档\n"
@@ -621,18 +457,9 @@ class VisualNovelPlugin(MaiBotPlugin):
         affection_level = result.get("affection_level", "普通")
         lines.append(f"\n好感度：{affection_value}（{affection_level}）")
 
-        # 选项
-        choices = result.get("choices", [])
-        if choices:
-            lines.append("\n请选择：")
-            for c in choices:
-                sign = "+" if c["affection_change"] > 0 else ""
-                aff_text = f" [好感 {sign}{c['affection_change']}]" if c["affection_change"] != 0 else ""
-                lines.append(f"  /dsv choose {c['index']} — {c['text']}{aff_text}")
-
+        lines.append("\n—— 输入 /dsv next 继续 ——")
         lines.append("\n可随时使用以下指令进行探索互动：")
-        lines.append("  /dsv gift <角色名> <礼物名> / /dsv invite <角色名> <活动名>")
-        lines.append("  /dsv chat <角色名> / /dsv notebook / /dsv save <槽位>")
+        lines.append("  /dsv chat <角色名> / /dsv save <槽位>")
         lines.append("\n输入 /dsv plot_exit 可退出游戏模式返回主菜单。")
 
         content = "\n".join(lines)
@@ -641,7 +468,7 @@ class VisualNovelPlugin(MaiBotPlugin):
             await fwd.send(stream_id, content)
         else:
             await self.ctx.send.text(content, stream_id)
-        return True, "剧情对话已启动", False
+        return True, "剧情对话已启动", True
 
     @Command(
         "dsv_plot_exit",
@@ -665,6 +492,75 @@ class VisualNovelPlugin(MaiBotPlugin):
 
         await self.ctx.send.text(result["message"], stream_id)
         return True, result["message"], True
+
+    # ==================== /dsv choose 命令 ====================
+
+    @Command(
+        "dsv_choose",
+        description="在剧情对话中选择选项分支",
+        pattern=r"^/dsv choose\s+(?P<index>\d+)$",
+        intercept_message_level=1,
+    )
+    async def handle_plot_choose(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
+        """在剧情对话中选择选项分支。
+
+        仅在剧情模式（PLOT_SCRIPT）中可用，新手引导和自由探索对话中不可使用。
+        选项编号从 1 开始。
+
+        Args:
+            stream_id: 消息流 ID。
+            kwargs: 包含 matched_groups 中的 index 参数。
+
+        Returns:
+            Command 标准返回值。
+        """
+        matched_groups = kwargs.get("matched_groups", {})
+        try:
+            choice_index = int(matched_groups.get("index", 0))
+        except (ValueError, TypeError):
+            return False, "无效的选项编号。用法：/dsv choose <编号>", True
+
+        if choice_index < 1:
+            return False, "选项编号必须大于 0。用法：/dsv choose <编号>", True
+
+        if self._renderer is None:
+            return False, "插件未正确加载。", True
+
+        # 仅在剧情模式可用
+        if self._renderer.fsm.current_state.name != "PLOT_SCRIPT":
+            return False, "选项选择仅在剧情模式中可用。请先使用 /dsv plot <角色名> 进入剧情。", True
+
+        # 转为 0-based 索引
+        result = await self._renderer.plot_make_choice(choice_index - 1)
+
+        if not result.get("success"):
+            return False, result.get("message", "选择失败。"), True
+
+        if result.get("dialogue_ended"):
+            if result.get("waiting_next_confirm"):
+                # 章节结束，等待玩家确认是否继续下一章
+                next_title = result.get("next_script_title", "下一章")
+                msg = (
+                    f"📖 本章剧情已完成！\n\n"
+                    f"下一章节《{next_title}》已就绪。\n"
+                    f"输入 /dsv next 继续剧情……"
+                )
+                await self.ctx.send.text(msg, stream_id)
+                return True, "章节结束，等待继续", True
+
+            # 所有剧情已完成
+            script_completed = result.get("script_completed", False)
+            if script_completed:
+                msg = result.get("message", "剧情章节已完成。")
+                msg += "\n\n该角色的所有剧情已全部完成。"
+                await self.ctx.send.text(msg, stream_id)
+            else:
+                await self.ctx.send.text(result.get("message", "对话已结束。"), stream_id)
+            return True, "对话结束", True
+
+        # 显示下一节点
+        await self._renderer.send_dialogue_display(stream_id, result)
+        return True, "已选择选项", True
 
     # ==================== /dsv chat 命令 ====================
 
@@ -712,7 +608,7 @@ class VisualNovelPlugin(MaiBotPlugin):
         asyncio.ensure_future(
             self._do_chat_reply(stream_id, "", model)
         )
-        return True, f"开始与 {character_name} 自由聊天", False
+        return True, f"开始与 {character_name} 自由聊天", True
 
     @Command(
         "dsv_chat_exit",
@@ -758,7 +654,7 @@ class VisualNovelPlugin(MaiBotPlugin):
             return False, result.get("message", "进入引导失败。"), True
 
         await self._renderer.send_dialogue_display(stream_id, result)
-        return True, "进入新手引导", False
+        return True, "进入新手引导", True
 
     @Command(
         "dsv_skip_tutorial",
@@ -783,11 +679,11 @@ class VisualNovelPlugin(MaiBotPlugin):
         await self.ctx.send.text(
             f"📖 已进入主菜单。\n"
             f"可用角色：{'、'.join(result.get('characters', []))}\n\n"
-            f"输入 /dsv explore <角色名> 进入故事模式\n"
+            f"输入 /dsv plot <角色名> 进入故事模式\n"
             f"输入 /dsv tutorial 可重新查看引导",
             stream_id,
         )
-        return True, "已跳过新手引导", False
+        return True, "已跳过新手引导", True
 
     @Command(
         "dsv_next",
@@ -797,9 +693,6 @@ class VisualNovelPlugin(MaiBotPlugin):
     )
     async def handle_novel_next(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
         """推进对话到下一节点。
-
-        当对话节点没有选项时使用此命令自动推进。
-        如果有选项会转为等待选择状态。
 
         Returns:
             Command 标准返回值。
@@ -811,6 +704,21 @@ class VisualNovelPlugin(MaiBotPlugin):
         result = await self._renderer.advance_dialogue()
         if not result.get("success"):
             return False, result.get("message", "对话推进失败。"), True
+
+        if result.get("waiting_next_confirm"):
+            # 章节结束，等待玩家确认是否继续下一章
+            next_title = result.get("next_script_title", "下一章")
+            msg = (
+                f"📖 本章剧情已完成！\n\n"
+                f"下一章节《{next_title}》已就绪。\n"
+                f"输入 /dsv next 继续剧情……"
+            )
+            fwd = self._renderer.forward_service
+            if fwd:
+                await fwd.send(stream_id, msg)
+            else:
+                await self.ctx.send.text(msg, stream_id)
+            return True, "章节结束，等待继续", True
 
         if result.get("dialogue_ended"):
             chars = result.get("characters")
@@ -829,82 +737,11 @@ class VisualNovelPlugin(MaiBotPlugin):
                 )
             else:
                 await self.ctx.send.text(result["message"], stream_id)
-            return True, "对话结束", False
+            return True, "对话结束", True
 
-        if result.get("awaiting_choice"):
-            # 有选项分支，显示选项
-            choices = result.get("choices", [])
-            lines = [result.get("text", "")]
-            lines.append("\n请选择：")
-            for c in choices:
-                lines.append(f"  /dsv choose {c['index']} — {c['text']}")
-            content = "\n".join(lines)
-            fwd = self._renderer.forward_service
-            if fwd:
-                await fwd.send(
-                    stream_id, content,
-                    nodes=[ForwardService.build_node(content, self.config.forward.bot_name)],
-                )
-            else:
-                await self.ctx.send.text(content, stream_id)
-            return True, "等待选择", False
-
-        # 线性推进，显示下一节点
+        # 显示下一节点
         await self._renderer.send_dialogue_display(stream_id, result)
-        return True, "对话推进", False
-
-    @Command(
-        "dsv_choose",
-        description="在对话中选择一个选项",
-        pattern=r"^/dsv choose\s+(?P<choice>\d+)$",
-        intercept_message_level=1,
-    )
-    async def handle_novel_choose(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
-        """在对话分支中选择一个选项。
-
-        Args:
-            stream_id: 消息流 ID。
-            kwargs: 包含 choice 参数（选项索引）。
-
-        Returns:
-            Command 标准返回值。
-        """
-        matched_groups = kwargs.get("matched_groups", {})
-        try:
-            choice_index = int(matched_groups.get("choice", -1))
-        except (ValueError, TypeError):
-            return False, "用法：/dsv choose <选项编号>", True
-
-        if self._renderer is None:
-            return False, "插件未正确加载。", True
-
-        result = await self._renderer.make_choice(choice_index)
-        if not result.get("success"):
-            return False, result.get("message", "选择无效。"), True
-
-        if result.get("dialogue_ended"):
-            # make_choice 到达终点节点已自动结束对话，发送结束信息
-            chars = result.get("characters")
-            fwd = self._renderer.forward_service
-            message = result.get("message", "对话已结束。")
-            if chars and fwd:
-                await fwd.send(
-                    stream_id,
-                    f"{message}\n\n可用角色：{'、'.join(chars)}",
-                )
-            elif fwd:
-                await fwd.send(stream_id, message)
-            elif chars:
-                await self.ctx.send.text(
-                    f"{message}\n\n可用角色：{'、'.join(chars)}",
-                    stream_id,
-                )
-            else:
-                await self.ctx.send.text(message, stream_id)
-            return True, "对话结束", False
-
-        await self._renderer.send_dialogue_display(stream_id, result)
-        return True, f"已选择选项 {choice_index}", False
+        return True, "对话推进", True
 
     # ==================== Tool 工具（供 LLM 调用） ====================
 
@@ -970,34 +807,6 @@ class VisualNovelPlugin(MaiBotPlugin):
         for name, state_data in status.get("affection_states", {}).items():
             lines.append(f"  {name}：好感度 {state_data['value']}（{state_data['level']}）")
         return {"name": "dsv_game_status", "content": "\n".join(lines)}
-
-    @Tool(
-        "dsv_gift_hints",
-        description="查看赠送礼物给角色时的线索提示。在玩家不确定送什么礼物时使用。",
-        parameters=[
-            ToolParameterInfo(name="character_name", param_type=ToolParamType.STRING, description="角色名称", required=True),
-        ],
-    )
-    async def tool_gift_hints(self, character_name: str = "", **kwargs: Any) -> dict[str, Any]:
-        """LLM 工具：获取记事本中关于角色喜好的礼物线索。
-
-        Args:
-            character_name: 角色名称。
-
-        Returns:
-            Tool 标准返回值，content 为线索文本。
-        """
-        del kwargs
-        if self._renderer is None:
-            return {"name": "dsv_gift_hints", "content": "插件未正确加载。"}
-
-        hints = self._renderer.notebook.get_gift_hints(character_name)
-        if hints:
-            return {"name": "dsv_gift_hints", "content": "\n".join(hints)}
-        return {
-            "name": "dsv_gift_hints",
-            "content": f"关于 {character_name}，记事本中暂无礼物线索。继续对话了解更多吧！",
-        }
 
     @Tool(
         "dsv_list_characters",

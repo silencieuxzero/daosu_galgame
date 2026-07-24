@@ -1,5 +1,44 @@
 # 变更日志
 
+## 1.2.3 (2026-07-20)
+
+### 新增功能
+
+- **恢复 `/dsv choose <编号>` 命令**：在剧情模式（`/dsv plot`）中可选择选项分支，非剧情模式不可用
+- **剧情选项增强**：倾诉烦恼状态的节点（sad/anxious/frustrated/venting）自动添加"静静听着"选项，选择后好感度 +5
+
+### 变更
+
+- **剧情推进不再自动选第一项**：`PlotManager.advance()` 遇到有选项的节点仅展示选项列表，等待玩家通过 `/dsv choose` 手动选择
+- **选项展示带编号**：选项列表改为 `1. 选项文本` 格式，并增加 `/dsv choose <编号>` 提示
+- **版本号**：更新为 1.2.3
+
+## 1.2.2 (2026-07-20)
+
+### 移除功能
+
+- **移除 `/dsv choose` 命令**：删除选项选择命令，所有对话中的选项分支自动选择第一项推进
+- **删除 `AWAITING_CHOICE` FSM 状态**：移除等待玩家选择状态及所有相关转换规则
+- **移除 `renderer.make_choice()` 和 `renderer.plot_make_choice()`**：删除选择调度器
+- **移除 `PlotManager.make_choice()`**：删除剧情引擎的选择方法，`advance()` 改为自动选第一项
+- **移除 `dialogue.py` 中过时的选择提示**：更新 `send_dialogue` 中 `/dsv choose` 提示文本
+- **更新命令描述**：`/dsv next` 改为通用推进命令（自动处理有选项的节点）
+- **FSM 精简**：状态从 10 种减少到 9 种
+- **更新文档**：同步更新 README 和 CHANGELOG
+
+## 1.2.1 (2026-07-20)
+
+### 移除功能
+
+- **移除 `/dsv explore` 命令**：删除探索模式入口，用户可通过 `/dsv plot` 进入游戏模式
+- **移除 `/dsv notebook` 命令及相关模块**：删除记事本与线索系统（`modules/notebook.py`），不再记录对话线索
+- **移除 `/dsv gift` 命令及相关模块**：删除礼物赠送系统（`modules/interaction.py` 中的礼物部分），不再支持送礼
+- **移除 `/dsv invite` 命令及相关模块**：删除邀约活动系统（`modules/interaction.py` 中的邀约部分），不再支持邀约
+- **移除 `dsv_gift_hints` LLM 工具**：删除礼物线索提示功能
+- **删除 FSM 状态**：移除 `GIFT_MENU`、`INVITE_MENU`、`NOTEBOOK` 三个状态及相关转换规则
+- **清理存档字段**：从 `SaveSlot` 中移除 `notebook_data` 和 `interaction_data` 字段
+- **更新文档**：同步更新 README 和 CHANGELOG，移除所有已删除功能的描述
+
 ## 1.2.0 (2026-07-20)
 
 ### 新增功能

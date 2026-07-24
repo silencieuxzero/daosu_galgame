@@ -465,9 +465,15 @@ class VisualNovelPlugin(MaiBotPlugin):
             "  /dsv load <槽位1-20> — 读档\n"
             "  /dsv ct — 从已加载的存档继续游戏\n"
             "  /dsv skip tutorial — 跳过引导\n"
+            "  /dsv factory_reset — 重置插件至出厂设置\n"
             "  /dsv help — 显示此帮助"
         )
         await self.ctx.send.text(help_text, stream_id)
+
+        # 如果正在教程中，标记用户已使用 /dsv help（解除 step_help_verify 阻塞）
+        if self._renderer is not None:
+            self._renderer.mark_tutorial_help_used()
+
         return True, "已显示帮助信息", True
 
     # ==================== /dsv plot 命令 ====================
@@ -781,6 +787,19 @@ class VisualNovelPlugin(MaiBotPlugin):
             await self.ctx.send.text(msg, stream_id)
             return False, msg, True
 
+        # 教程帮助验证：用户尚未使用 /dsv help，显示提醒
+        if result.get("tutorial_help_required"):
+            reminder = (
+                f"{result.get('text', '')}\n\n"
+                f"⚠️ {result.get('message', '请先输入 /dsv help 查看命令列表。')}"
+            )
+            fwd = self._renderer.forward_service
+            if fwd:
+                await fwd.send(stream_id, reminder)
+            else:
+                await self.ctx.send.text(reminder, stream_id)
+            return True, "等待用户使用 /dsv help", True
+
         if result.get("waiting_next_confirm"):
             # 章节结束，等待玩家确认是否继续下一章
             next_title = result.get("next_script_title", "下一章")
@@ -818,6 +837,98 @@ class VisualNovelPlugin(MaiBotPlugin):
         # 显示下一节点
         await self._renderer.send_dialogue_display(stream_id, result)
         return True, "对话推进", True
+
+    # ==================== 出厂设置命令 ====================
+
+    @Command(
+        "dsv_factory_reset",
+        description="重置插件至出厂设置（第一步：查看警告）",
+        pattern=r"^/dsv factory_reset$",
+        intercept_message_level=1,
+    )
+    async def handle_factory_reset_warning(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
+        """出厂设置第一步：显示操作警告与确认指引。
+
+        告知用户此操作的影响范围，要求用户输入确认指令
+        '/dsv factory_reset confirm' 以继续。
+
+        Returns:
+            Command 标准返回值。
+        """
+        del kwargs
+        if self._renderer is None:
+            await self.ctx.send.text("插件未正确加载。", stream_id)
+            return False, "插件未正确加载。", True
+
+        warning_text = (
+            "⚠️ 出厂设置操作确认\n\n"
+            "此操作将永久清除以下所有用户数据：\n"
+            "  1. 所有存档文件（data/saves/）\n"
+            "  2. 所有剧情进度（data/plot/.progress.json）\n"
+            "  3. 所有角色好感度数据\n"
+            "  4. 所有选择记录\n"
+            "  5. 当前游戏会话状态\n\n"
+            "操作前会自动创建备份到 data/backups/<时间戳>/ 目录。\n"
+            "清除后插件将回到首次安装时的初始状态。\n\n"
+            "请输入 /dsv factory_reset confirm 确认执行此操作。\n"
+            "输入其他命令或等待 60 秒可取消操作。"
+        )
+        await self.ctx.send.text(warning_text, stream_id)
+        return True, "已显示出厂设置警告", True
+
+    @Command(
+        "dsv_factory_reset_confirm",
+        description="确认执行出厂设置（第二步：执行清除）",
+        pattern=r"^/dsv factory_reset confirm$",
+        intercept_message_level=1,
+    )
+    async def handle_factory_reset_confirm(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
+        """出厂设置第二步：执行备份与数据清除。
+
+        先备份用户数据，再清除所有用户数据，最后验证结果。
+
+        Returns:
+            Command 标准返回值。
+        """
+        del kwargs
+        if self._renderer is None:
+            await self.ctx.send.text("插件未正确加载。", stream_id)
+            return False, "插件未正确加载。", True
+
+        # 第一步：备份
+        backup_result = self._renderer.backup_user_data()
+        if not backup_result.get("success"):
+            await self.ctx.send.text(
+                f"❌ 备份失败：{backup_result.get('message', '未知错误')}\n操作已中止，数据未被修改。",
+                stream_id,
+            )
+            return False, backup_result.get("message", "备份失败"), True
+
+        backup_path = backup_result.get("backup_path", "未知路径")
+
+        # 第二步：执行清除
+        reset_result = await self._renderer.factory_reset()
+        if not reset_result.get("success"):
+            await self.ctx.send.text(
+                f"⚠️ 出厂设置部分失败。\n"
+                f"已清除：{'、'.join(reset_result.get('cleared_items', []))}\n"
+                f"错误：{'；'.join(reset_result.get('errors', []))}\n"
+                f"备份位置：{backup_path}",
+                stream_id,
+            )
+            return False, "出厂设置部分失败", True
+
+        # 第三步：验证并报告
+        cleared_items = "、".join(reset_result.get("cleared_items", []))
+        verify_text = (
+            f"✅ 出厂设置已完成\n\n"
+            f"已清除：{cleared_items}\n"
+            f"备份位置：{backup_path}\n"
+            f"当前状态：{reset_result.get('state', 'IDLE')}\n\n"
+            f"输入 /dsv start 可重新开始游戏。"
+        )
+        await self.ctx.send.text(verify_text, stream_id)
+        return True, "出厂设置完成", True
 
     # ==================== Tool 工具（供 LLM 调用） ====================
 

@@ -12,25 +12,43 @@
     },
     "step_welcome": {
       "speaker": "narrator",
-      "text": "━━━ 【1/4 · 茶馆初见】 ━━━\n\n茶馆虽小，却藏着两个特别的人：\n\n✦ 洛疏律 — 角落桌前安静写字的黑衣青年\n✦ 查维尔 — 鱼池边守望远方的神秘少年\n\n他们都有自己未完的故事。\n而你，即将成为故事的一部分。",
+      "text": "━━━ 【1/5 · 茶馆初见】 ━━━\n\n茶馆虽小，却藏着两个特别的人：\n\n✦ 洛疏律 — 角落桌前安静写字的黑衣青年\n✦ 查维尔 — 鱼池边守望远方的神秘少年\n\n他们都有自己未完的故事。\n而你，即将成为故事的一部分。",
       "emotion": "neutral",
       "next_node": "step_chars"
     },
     "step_chars": {
       "speaker": "narrator",
-      "text": "━━━ 【2/4 · 他们是谁】 ━━━\n\n· 洛疏律（小律）— 25岁男性，性格温和内向。随身带一本A5笔记本，喜欢雨天和热茶。话不多，但每句都经过斟酌。\n\n· 查维尔（病渔）— 外表十六七岁，性别不明。神秘内敛，总守在鱼池边看鱼。偶尔自顾自讲起很久以前的事，让人分不清是梦是醒。\n\n两位角色各自拥有独立的好感度、对话线和剧情章节，你可以同时推进两人的故事。",
+      "text": "━━━ 【2/5 · 他们是谁】 ━━━\n\n· 洛疏律（小律）— 25岁男性，性格温和内向。随身带一本A5笔记本，喜欢雨天和热茶。话不多，但每句都经过斟酌。\n\n· 查维尔（病渔）— 外表十六七岁，性别不明。神秘内敛，总守在鱼池边看鱼。偶尔自顾自讲起很久以前的事，让人分不清是梦是醒。\n\n两位角色各自拥有独立的好感度、对话线和剧情章节，你可以同时推进两人的故事。",
       "emotion": "neutral",
       "next_node": "step_guide"
     },
     "step_guide": {
       "speaker": "narrator",
-      "text": "━━━ 【3/4 · 核心玩法】 ━━━\n\n▸ 开始剧情\n/dsv plot <角色名>\n进入角色的分段式剧情对话，体验完整故事。\n系统自动记录进度，下次继续。\n\n▸ 推进对话\n/dsv next\n当一个节点没有选项时自动推进；\n有选项时自动选择第一项推进。\n\n▸ 自由聊天\n/dsv chat <角色名>\n让角色用 AI 和你畅所欲言。\n输入 /dsv chat_exit 退出。\n\n▸ 查看状态\n/dsv status\n查看当前游戏模式及所有角色好感度。\n\n▸ 存档管理\n/dsv save <槽位1-20> [标签]\n/dsv load <槽位1-20>\n多槽位存档，随时读档。\n\n▸ 退出模式\n/dsv plot_exit\n退出剧情模式返回主菜单。",
+      "text": "━━━ 【3/5 · 核心玩法】 ━━━\n\n▸ 开始剧情\n/dsv plot <角色名>\n进入角色的分段式剧情对话，体验完整故事。\n系统自动记录进度，下次继续。\n\n▸ 推进对话\n/dsv next\n当一个节点没有选项时自动推进；\n有选项时自动选择第一项推进。\n\n▸ 自由聊天\n/dsv chat <角色名>\n让角色用 AI 和你畅所欲言。\n输入 /dsv chat_exit 退出。\n\n▸ 存档管理\n/dsv save <槽位1-20> [标签]\n/dsv load <槽位1-20>\n多槽位存档，随时读档。",
       "emotion": "neutral",
+      "next_node": "step_help_intro"
+    },
+    "step_help_intro": {
+      "speaker": "narrator",
+      "text": "━━━ 【4/5 · 求助指南】 ━━━\n\n忘记命令了？随时使用：\n\n📖 /dsv help\n\n这条命令会列出所有可用功能及其用法，包括：\n• 启动游戏、推进剧情\n• 自由聊天模式\n• 存档与读档\n• 查看游戏状态\n• 出厂设置等高级操作\n\n💡 现在就试试输入 /dsv help 吧！\n系统会等你看完帮助再继续。",
+      "emotion": "warm",
+      "next_node": "step_help_verify"
+    },
+    "step_help_verify": {
+      "speaker": "narrator",
+      "text": "⌛ 请先输入 /dsv help 查看完整命令列表，\n确认了解后再输入 /dsv next 继续。\n\n（这是一个交互验证步骤，确保你掌握了查看帮助的方法。\n在游戏过程中遇到任何疑问，都可以随时使用 /dsv help。）",
+      "emotion": "neutral",
+      "next_node": "step_help_confirmed"
+    },
+    "step_help_confirmed": {
+      "speaker": "narrator",
+      "text": "✅ 很好！你已经掌握了 /dsv help 这个万能求助入口。\n\n无论何时忘记命令用法，只需输入 /dsv help，\n系统会立刻列出当前版本支持的所有功能。",
+      "emotion": "warm",
       "next_node": "step_outro"
     },
     "step_outro": {
       "speaker": "narrator",
-      "text": "万事俱备，只欠一步。\n\n选择一个你想了解的人：\n\n/dsv plot 洛疏律\n/dsv plot 查维尔\n\n他们正在茶馆里等你。\n\n输入 /dsv help 随时查看完整命令列表。",
+      "text": "━━━ 【5/5 · 启程】 ━━━\n\n万事俱备，只欠一步。\n\n选择一个你想了解的人：\n\n/dsv plot 洛疏律\n/dsv plot 查维尔\n\n他们正在茶馆里等你。",
       "emotion": "warm",
       "next_node": "end"
     },
@@ -43,7 +61,7 @@
   },
   "metadata": {
     "author": "visual-novel",
-    "version": "2.2",
+    "version": "2.3",
     "type": "tutorial"
   }
 }

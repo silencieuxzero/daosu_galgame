@@ -45,6 +45,7 @@ class SaveSlot:
     current_node: str | None = None
     affection_data: dict[str, dict[str, Any]] = field(default_factory=dict)
     choice_history: list[dict[str, Any]] = field(default_factory=list)
+    completed_scripts: dict[str, list[str]] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -62,6 +63,7 @@ class SaveSlot:
             "current_node": self.current_node,
             "affection_data": self.affection_data,
             "choice_history": self.choice_history,
+            "completed_scripts": self.completed_scripts,
             "metadata": self.metadata,
         }
 
@@ -84,6 +86,7 @@ class SaveSlot:
             current_node=data.get("current_node"),
             affection_data=data.get("affection_data", {}),
             choice_history=data.get("choice_history", []),
+            completed_scripts=data.get("completed_scripts", {}),
             metadata=data.get("metadata", {}),
         )
 
@@ -172,6 +175,7 @@ class SaveManager:
         current_script: str | None = None,
         current_node: str | None = None,
         affection_data: dict[str, dict[str, Any]] | None = None,
+        completed_scripts: dict[str, list[str]] | None = None,
         extra_metadata: dict[str, Any] | None = None,
     ) -> SaveSlot:
         """保存游戏进度到指定槽位。
@@ -186,6 +190,7 @@ class SaveManager:
             current_script: 当前对话脚本 ID。
             current_node: 当前对话节点 ID。
             affection_data: 好感度管理器导出的数据。
+            completed_scripts: 剧情进度数据（角色 -> 已完成脚本列表）。
             extra_metadata: 额外元数据。
 
         Returns:
@@ -208,6 +213,7 @@ class SaveManager:
             current_node=current_node,
             affection_data=affection_data or {},
             choice_history=list(self._choice_history),
+            completed_scripts=completed_scripts or {},
             metadata=extra_metadata or {},
         )
 

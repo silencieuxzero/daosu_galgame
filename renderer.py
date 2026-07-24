@@ -93,6 +93,7 @@ class VisualNovelRenderer:
         # 初始化标记
         self._initialized = False
         self._is_tutorial = False  # 标记当前是否处于教程模式，用于结束时正确转换状态
+        self._loaded_slot = None  # 当前加载的存档槽（SaveSlot 或 None）
 
     @property
     def fsm(self) -> StateMachine:
@@ -176,6 +177,9 @@ class VisualNovelRenderer:
         """
         if not self._initialized:
             await self.initialize()
+
+        # 开始新游戏时清除全部剧情进度
+        self._plot_mgr.reset_progress()
 
         # 检测首次游玩（且引导已启用）
         if self._tutorial_enabled and self._save_mgr.is_first_time():
@@ -546,8 +550,13 @@ class VisualNovelRenderer:
             存档结果字典。
         """
         try:
-            current_script = self._dialogue_mgr.get_current_script()
-            current_node = self._dialogue_mgr.get_current_node()
+            # 根据当前状态选择正确的管理器获取脚本/节点
+            if self._fsm.current_state == GameState.PLOT_SCRIPT and self._plot_mgr.is_active():
+                current_script = self._plot_mgr.get_current_script()
+                current_node = self._plot_mgr.get_current_node()
+            else:
+                current_script = self._dialogue_mgr.get_current_script()
+                current_node = self._dialogue_mgr.get_current_node()
             slot = self._save_mgr.save(
                 slot_id=slot_id,
                 label=label,
@@ -555,6 +564,7 @@ class VisualNovelRenderer:
                 current_script=current_script.script_id if current_script else None,
                 current_node=current_node.node_id if current_node else None,
                 affection_data=self._affection_mgr.dump_state(),
+                completed_scripts=self._plot_mgr.dump_progress(),
             )
             return {"success": True, "slot_id": slot_id, "timestamp": slot.timestamp, "message": f"存档已保存到槽位 {slot_id}。"}
         except Exception as e:
@@ -579,6 +589,10 @@ class VisualNovelRenderer:
         # 恢复各模块状态
         self._affection_mgr.load_state(slot.affection_data)
 
+        # 恢复剧情进度数据
+        if slot.completed_scripts:
+            self._plot_mgr.restore_progress(slot.completed_scripts)
+
         # 恢复 FSM 状态
         try:
             target_state = GameState[slot.game_state] if slot.game_state else GameState.MAIN_MENU
@@ -591,6 +605,9 @@ class VisualNovelRenderer:
             except Exception:
                 pass
 
+        # 记录已加载的存档槽，供 /dsv ct 继续游戏使用
+        self._loaded_slot = slot
+
         return {
             "success": True,
             "slot_id": slot_id,
@@ -598,6 +615,48 @@ class VisualNovelRenderer:
             "game_state": slot.game_state,
             "message": f"已从槽位 {slot_id} 加载存档。",
         }
+
+    async def continue_from_save(self) -> dict[str, Any]:
+        """从已加载的存档继续游戏。
+
+        要求先通过 load_game() 加载存档。根据存档中记录的
+        script_id 和 node_id 恢复 PlotManager 状态并返回当前节点。
+
+        Returns:
+            恢复后的剧情节点数据，或错误信息。
+        """
+        if self._loaded_slot is None:
+            return {"success": False, "message": "没有已加载的存档。请先使用 /dsv load <槽位> 加载存档。"}
+
+        slot = self._loaded_slot
+
+        if not slot.current_script or not slot.current_node:
+            return {"success": False, "message": "该存档不包含剧情进度数据，无法继续游戏。请使用 /dsv plot <角色名> 开始新剧情。"}
+
+        # 切换到 PLOT_SCRIPT 状态
+        if self._fsm.current_state != GameState.PLOT_SCRIPT:
+            try:
+                self._fsm.transition_to(GameState.PLOT_SCRIPT)
+            except Exception:
+                return {"success": False, "message": f"无法从当前状态（{self._fsm.current_state.name}）切换到游戏模式。"}
+
+        # 结束当前活跃的剧情对话
+        if self._plot_mgr.is_active():
+            self._plot_mgr.end_dialogue()
+
+        # 恢复到存档记录的脚本和节点
+        result = self._plot_mgr.resume_script(slot.current_script, slot.current_node)
+        if result.get("success"):
+            result["state"] = GameState.PLOT_SCRIPT.name
+            # 附加好感度信息
+            script = self._plot_mgr.get_current_script()
+            if script:
+                affection_value = self._affection_mgr.get_value(script.character_name)
+                affection_level = self._affection_mgr.get_level(script.character_name)
+                result["affection_value"] = affection_value
+                result["affection_level"] = affection_level
+
+        return result
 
     # ==================== 分段式剧情对话（/dsv plot） ====================
 
@@ -630,6 +689,9 @@ class VisualNovelRenderer:
         # 如果有进行中的对话，先结束
         if self._plot_mgr.is_active():
             self._plot_mgr.end_dialogue()
+
+        # 启动新剧情时清除已加载的存档标记
+        self._loaded_slot = None
 
         # 切换状态
         if self._fsm.current_state != GameState.PLOT_SCRIPT:

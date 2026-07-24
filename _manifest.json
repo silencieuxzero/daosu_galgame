@@ -1,6 +1,7 @@
 {
   "manifest_version": 2,
-  "version": "1.2.3",
+  "id": "com.silencieuxzero.daosu-visual-novel",
+  "version": "1.2.4",
   "name": "悼溯茶馆",
   "description": "基于 MaiBot 的文字类视觉小说插件，背景设定于悼溯茶馆。支持角色互动、好感度系统、存档管理、线索收集与记事本等功能。可攻略角色：洛疏律、查维尔。",
   "author": {
@@ -35,6 +36,5 @@
     "supported_locales": [
       "zh-CN"
     ]
-  },
-  "id": "com.daosu.visual-novel"
+  }
 }

@@ -246,6 +246,7 @@ class VisualNovelPlugin(MaiBotPlugin):
         """
         del kwargs
         if self._renderer is None:
+            await self.ctx.send.text("插件未正确加载。", stream_id)
             return False, "插件未正确加载。", True
 
         result = await self._renderer.start_game()
@@ -365,14 +366,72 @@ class VisualNovelPlugin(MaiBotPlugin):
         slot_id = int(matched_groups.get("slot", 0))
 
         if self._renderer is None:
+            await self.ctx.send.text("插件未正确加载。", stream_id)
             return False, "插件未正确加载。", True
 
         result = await self._renderer.load_game(slot_id)
         if not result.get("success"):
-            return False, result.get("message", "读档失败。"), True
+            msg = result.get("message", "读档失败。")
+            await self.ctx.send.text(msg, stream_id)
+            return False, msg, True
 
         await self.ctx.send.text(result["message"], stream_id)
         return True, result["message"], True
+
+    @Command(
+        "dsv_ct",
+        description="从已加载的存档继续游戏",
+        pattern=r"^/dsv ct$",
+        intercept_message_level=1,
+    )
+    async def handle_continue(self, stream_id: str = "", **kwargs: Any) -> bool | tuple[bool, str, bool]:
+        """从已加载的存档继续游戏。
+
+        必须先使用 /dsv load <槽位> 加载存档。根据存档中记录的
+        脚本和节点位置恢复到游戏进程。
+
+        Args:
+            stream_id: 消息流 ID。
+
+        Returns:
+            Command 标准返回值。
+        """
+        del kwargs
+        if self._renderer is None:
+            await self.ctx.send.text("插件未正确加载。", stream_id)
+            return False, "插件未正确加载。", True
+
+        result = await self._renderer.continue_from_save()
+        if not result.get("success"):
+            msg = result.get("message", "继续游戏失败。")
+            await self.ctx.send.text(msg, stream_id)
+            return False, msg, True
+
+        # 构建显示文本（与 handle_plot_start 保持一致）
+        lines = [f"📖 {result.get('title', '剧情对话')}\n"]
+        speaker = result.get("speaker", "narrator")
+        if speaker == "narrator":
+            lines.append(f"{result['text']}")
+        else:
+            lines.append(f"💬 {speaker}\n{result['text']}")
+
+        # 好感度信息
+        affection_value = result.get("affection_value", 0)
+        affection_level = result.get("affection_level", "普通")
+        lines.append(f"\n好感度：{affection_value}（{affection_level}）")
+
+        lines.append("\n—— 输入 /dsv next 继续 ——")
+        lines.append("\n可随时使用以下指令进行探索互动：")
+        lines.append("  /dsv chat <角色名> / /dsv save <槽位>")
+        lines.append("\n输入 /dsv plot_exit 可退出游戏模式返回主菜单。")
+
+        content = "\n".join(lines)
+        fwd = self._renderer.forward_service
+        if fwd:
+            await fwd.send(stream_id, content)
+        else:
+            await self.ctx.send.text(content, stream_id)
+        return True, "已从存档继续游戏", True
 
     @Command(
         "dsv_help",
@@ -395,7 +454,7 @@ class VisualNovelPlugin(MaiBotPlugin):
             "可用命令：\n"
             "  /dsv start — 启动游戏（首次自动进入引导）\n"
             "  /dsv tutorial — 重新查看新手引导\n"
-            "  /dsv plot <角色名> — 开始/继续剧情章节\n"
+            "  /dsv plot <角色名> — 开始剧情章节\n"
             "  /dsv plot_exit — 退出游戏模式，返回主菜单\n"
             "  /dsv chat <角色名> — 与角色进行自由聊天（LLM 驱动）\n"
             "  /dsv chat_exit — 退出自由聊天模式\n"
@@ -404,6 +463,7 @@ class VisualNovelPlugin(MaiBotPlugin):
             "  /dsv status — 查看游戏状态\n"
             "  /dsv save <槽位1-20> [标签] — 存档\n"
             "  /dsv load <槽位1-20> — 读档\n"
+            "  /dsv ct — 从已加载的存档继续游戏\n"
             "  /dsv skip tutorial — 跳过引导\n"
             "  /dsv help — 显示此帮助"
         )
@@ -435,14 +495,18 @@ class VisualNovelPlugin(MaiBotPlugin):
         character_name = str(matched_groups.get("character", "")).strip()
 
         if not character_name:
+            await self.ctx.send.text("请指定角色名。用法：/dsv plot <角色名>", stream_id)
             return False, "请指定角色名。用法：/dsv plot <角色名>", True
 
         if self._renderer is None:
+            await self.ctx.send.text("插件未正确加载。", stream_id)
             return False, "插件未正确加载。", True
 
         result = await self._renderer.start_plot(character_name)
         if not result.get("success"):
-            return False, result.get("message", "启动剧情对话失败。"), True
+            msg = result.get("message", "启动剧情对话失败。")
+            await self.ctx.send.text(msg, stream_id)
+            return False, msg, True
 
         # 构建显示文本
         lines = [f"📖 {result.get('title', '剧情对话')}\n"]
@@ -484,11 +548,14 @@ class VisualNovelPlugin(MaiBotPlugin):
         """
         del kwargs
         if self._renderer is None:
+            await self.ctx.send.text("插件未正确加载。", stream_id)
             return False, "插件未正确加载。", True
 
         result = await self._renderer.plot_end()
         if not result.get("success"):
-            return False, result.get("message", "退出失败。"), True
+            msg = result.get("message", "退出失败。")
+            await self.ctx.send.text(msg, stream_id)
+            return False, msg, True
 
         await self.ctx.send.text(result["message"], stream_id)
         return True, result["message"], True
@@ -518,23 +585,29 @@ class VisualNovelPlugin(MaiBotPlugin):
         try:
             choice_index = int(matched_groups.get("index", 0))
         except (ValueError, TypeError):
+            await self.ctx.send.text("无效的选项编号。用法：/dsv choose <编号>", stream_id)
             return False, "无效的选项编号。用法：/dsv choose <编号>", True
 
         if choice_index < 1:
+            await self.ctx.send.text("选项编号必须大于 0。用法：/dsv choose <编号>", stream_id)
             return False, "选项编号必须大于 0。用法：/dsv choose <编号>", True
 
         if self._renderer is None:
+            await self.ctx.send.text("插件未正确加载。", stream_id)
             return False, "插件未正确加载。", True
 
         # 仅在剧情模式可用
         if self._renderer.fsm.current_state.name != "PLOT_SCRIPT":
+            await self.ctx.send.text("选项选择仅在剧情模式中可用。请先使用 /dsv plot <角色名> 进入剧情。", stream_id)
             return False, "选项选择仅在剧情模式中可用。请先使用 /dsv plot <角色名> 进入剧情。", True
 
         # 转为 0-based 索引
         result = await self._renderer.plot_make_choice(choice_index - 1)
 
         if not result.get("success"):
-            return False, result.get("message", "选择失败。"), True
+            msg = result.get("message", "选择失败。")
+            await self.ctx.send.text(msg, stream_id)
+            return False, msg, True
 
         if result.get("dialogue_ended"):
             if result.get("waiting_next_confirm"):
@@ -699,11 +772,14 @@ class VisualNovelPlugin(MaiBotPlugin):
         """
         del kwargs
         if self._renderer is None:
+            await self.ctx.send.text("插件未正确加载。", stream_id)
             return False, "插件未正确加载。", True
 
         result = await self._renderer.advance_dialogue()
         if not result.get("success"):
-            return False, result.get("message", "对话推进失败。"), True
+            msg = result.get("message", "对话推进失败。")
+            await self.ctx.send.text(msg, stream_id)
+            return False, msg, True
 
         if result.get("waiting_next_confirm"):
             # 章节结束，等待玩家确认是否继续下一章

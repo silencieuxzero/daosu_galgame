@@ -268,6 +268,25 @@ class PlotManager:
         msg = f"已重置角色 '{character_name}' 的剧情进度。" if character_name else "已重置所有角色的剧情进度。"
         return {"success": True, "message": msg}
 
+    def dump_progress(self) -> dict[str, list[str]]:
+        """导出当前剧情进度数据，供存档使用。
+
+        Returns:
+            角色名到已完成脚本 ID 列表的映射（深拷贝）。
+        """
+        return {k: list(v) for k, v in self._completed_scripts.items()}
+
+    def restore_progress(self, data: dict[str, list[str]]) -> None:
+        """从存档恢复剧情进度数据。
+
+        将传入的进度数据写入内存并持久化到磁盘。
+
+        Args:
+            data: 角色名到已完成脚本 ID 列表的映射。
+        """
+        self._completed_scripts = {k: list(v) for k, v in data.items()}
+        self._save_progress()
+
     def get_character_progress(self, character_name: str) -> dict[str, Any]:
         """获取指定角色的剧情进度。
 
@@ -920,6 +939,42 @@ class PlotManager:
     def is_active(self) -> bool:
         """检查当前是否有活跃的剧情对话或有待确认的下一章节。"""
         return self._current_node is not None or self._pending_next_character is not None
+
+    def get_script_by_id(self, script_id: str) -> PlotScript | None:
+        """通过 script_id 获取剧情脚本。
+
+        Args:
+            script_id: 脚本唯一标识。
+
+        Returns:
+            对应的 PlotScript，不存在则返回 None。
+        """
+        if not self._script_loaded:
+            self.load_all_scripts()
+        return self._scripts.get(script_id)
+
+    def resume_script(self, script_id: str, node_id: str) -> dict[str, Any]:
+        """从指定脚本的指定节点恢复剧情对话。
+
+        用于读档后继续游戏：设置当前脚本并跳转到存档记录中的节点。
+
+        Args:
+            script_id: 存档中记录的脚本 ID。
+            node_id: 存档中记录的节点 ID。
+
+        Returns:
+            节点数据字典，包含文本、选项等。
+        """
+        script = self.get_script_by_id(script_id)
+        if script is None:
+            return {"success": False, "message": f"脚本 '{script_id}' 不存在，存档数据可能已过期。"}
+
+        self._current_script = script
+        result = self._go_to_node(node_id)
+        if result.get("success"):
+            result["script_id"] = script_id
+            result["title"] = script.title
+        return result
 
     def list_scripts(self) -> list[dict[str, str]]:
         """列出所有可用剧情脚本。

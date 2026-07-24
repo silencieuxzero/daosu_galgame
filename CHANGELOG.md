@@ -1,5 +1,27 @@
 # 变更日志
 
+## 1.2.4 (2026-07-24)
+
+### 新增功能
+
+- **新增 `/dsv ct` 命令**：从已加载的存档继续游戏。玩家先使用 `/dsv load <槽位>` 加载存档，再执行 `/dsv ct` 即可恢复到存档时的脚本和节点位置继续游玩
+- **存档包含剧情进度**：`SaveSlot` 新增 `completed_scripts` 字段，存档时自动记录各角色已完成的章节进度
+- **`/dsv start` 清除全部进度**：开始新游戏时自动清空 `data/plot/.progress.json`，确保从头开始
+- **`/dsv load` 恢复剧情进度**：加载存档时自动将存档中的已完成章节列表写回 `.progress.json`，实现进度完整恢复
+- **PlotManager 新增公开方法**：`resume_script(script_id, node_id)` 从指定节点恢复剧情；`get_script_by_id()` 按 ID 查找脚本；`dump_progress()` / `restore_progress()` 导出/恢复进度
+
+### Bug 修复
+
+- **修复 `/dsv plot` 失败时无用户可见输出**：所有剧情相关命令（`dsv_plot`、`dsv_plot_exit`、`dsv_choose`、`dsv_next`、`dsv_load`）的错误消息现在正确发送给用户，此前仅写入框架日志
+- **修复 PLOT_SCRIPT 状态下存档不记录剧情位置**：`save_game()` 现在根据 FSM 状态自动选择 `plot_mgr` 或 `dialogue_mgr` 获取当前脚本/节点，确保剧情模式下存档包含正确的脚本进度数据
+
+### 变更
+
+- **`/dsv plot` 帮助文本**：从"开始/继续剧情章节"改为"开始剧情章节"，继续功能由 `/dsv ct` 独立承担
+- **帮助命令**：新增 `/dsv ct` 条目；读档/继续流程说明
+- **`start_plot` 清除已加载存档标记**：开始新剧情时自动清除 `_loaded_slot`，防止与 `/dsv ct` 产生状态交叉
+- **版本号**：更新为 1.2.4
+
 ## 1.2.3 (2026-07-20)
 
 ### 新增功能
